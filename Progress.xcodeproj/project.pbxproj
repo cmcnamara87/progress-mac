@@ -18,6 +18,7 @@
 		4EBA1CFA1955A86B00AF60E1 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EBA1CD91955A86B00AF60E1 /* Cocoa.framework */; };
 		4EBA1D021955A86B00AF60E1 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4EBA1D001955A86B00AF60E1 /* InfoPlist.strings */; };
 		4EBA1D041955A86B00AF60E1 /* ProgressTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EBA1D031955A86B00AF60E1 /* ProgressTests.m */; };
+		4EBA1D0E1955ABFD00AF60E1 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 4EBA1D0D1955ABFD00AF60E1 /* icon.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +51,7 @@
 		4EBA1CFF1955A86B00AF60E1 /* ProgressTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ProgressTests-Info.plist"; sourceTree = "<group>"; };
 		4EBA1D011955A86B00AF60E1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4EBA1D031955A86B00AF60E1 /* ProgressTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProgressTests.m; sourceTree = "<group>"; };
+		4EBA1D0D1955ABFD00AF60E1 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,6 +117,7 @@
 		4EBA1CDF1955A86B00AF60E1 /* Progress */ = {
 			isa = PBXGroup;
 			children = (
+				4EBA1D0D1955ABFD00AF60E1 /* icon.png */,
 				4EBA1CEB1955A86B00AF60E1 /* AppDelegate.h */,
 				4EBA1CEC1955A86B00AF60E1 /* AppDelegate.m */,
 				4EBA1CEE1955A86B00AF60E1 /* MainMenu.xib */,
@@ -230,6 +233,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4EBA1D0E1955ABFD00AF60E1 /* icon.png in Resources */,
 				4EBA1CE41955A86B00AF60E1 /* InfoPlist.strings in Resources */,
 				4EBA1CF21955A86B00AF60E1 /* Images.xcassets in Resources */,
 				4EBA1CEA1955A86B00AF60E1 /* Credits.rtf in Resources */,

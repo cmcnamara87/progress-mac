@@ -22,13 +22,12 @@
   [self.statusItem setImage:[NSImage imageNamed:@"icon.png"]];
   
   [self setupMenu];
-  
+
+  // Hide app window
   [self.window orderOut:self];
   
 //  [self watchConfigFolder];
-  
 
-  
 }
 
 - (void)setupMenu
@@ -57,10 +56,18 @@
     self.projects = responseObject;
     NSLog(@"got json %@", responseObject);
     for(id project in responseObject) {
-          NSLog(@"got project %@", project);
-      [self watchProject:project];
-      // Add menubar for each project
-      [menu addItemWithTitle:[project objectForKey:@"name"] action:@selector(openWebApp:) keyEquivalent:@""];
+      
+      NSMutableArray *mPaths = [NSMutableArray array];
+      for (NSDictionary *directory in [project objectForKey:@"directories"]) {
+        [mPaths addObject:[directory objectForKey:@"path"]];
+      }
+      NSArray *paths = [mPaths copy];
+      [self watchPaths:paths forProject:project];
+      
+      // Setup menu item
+      NSMenuItem *projectMenuItem = [menu addItemWithTitle:[project objectForKey:@"name"] action:@selector(addDirectoriesToProject:) keyEquivalent:@""];
+      [projectMenuItem setTarget:self];
+      [projectMenuItem setRepresentedObject:project];
     }
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: %@", error);
@@ -68,22 +75,48 @@
 
 }
 
+- (void)addDirectoriesToProject:(id)sender
+{
+  NSDictionary *project = [sender representedObject];
+
+  NSOpenPanel *panel = [NSOpenPanel openPanel];
+  [panel setAllowsMultipleSelection:YES];
+  [panel setCanChooseDirectories:YES];
+  [panel setCanChooseFiles:NO];
+  NSInteger clicked = [panel runModal];
+  
+  if (clicked == NSFileHandlingPanelOKButton) {
+    // Get out all the paths
+    NSMutableArray *paths = [NSMutableArray array];
+    
+    for (NSURL *url in [panel URLs] ) {
+      [paths addObject:[url path]];
+      
+      AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+      NSDictionary *parameters = @{@"path": [url path]};
+      NSString *url = [NSString stringWithFormat:@"http://localhost:8888/index.php/me/projects/%@/directories", [project objectForKey:@"id"]];
+      NSLog(@"Posting to %@", url);
+      [manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSLog(@"JSON: %@", responseObject);
+      } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"Error: %@", error);
+      }];
+    }
+    
+    // Start watching those paths
+    [self watchPaths:[paths copy] forProject:project];
+  }
+}
 
 - (void)openWebApp:(id)sender
 {
-  NSURL *URL = [NSURL URLWithString:@"http://google.com"];
+  NSURL *URL = [NSURL URLWithString:@"http://localhost:8888/index.php/me/projects"];
   [[NSWorkspace sharedWorkspace] openURL:URL];
 }
 
-- (void)watchProject:(NSDictionary *)project {
+- (void)watchPaths:(NSArray *)paths forProject:(NSDictionary *)project {
 //  NSOrderedSet *watchSet = [goal watchedFiles];
   
-  
-  NSMutableArray *mPaths = [NSMutableArray array];
-  for (NSDictionary *directory in [project objectForKey:@"directories"]) {
-    [mPaths addObject:[directory objectForKey:@"path"]];
-  }
-  NSArray *paths = [mPaths copy];
   
   CFArrayRef pathArray = (__bridge CFArrayRef)paths;
   

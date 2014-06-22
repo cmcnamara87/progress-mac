@@ -22,63 +22,83 @@
   [self.statusItem setImage:[NSImage imageNamed:@"icon.png"]];
   
   [self setupMenu];
+  [self setupProjects];
 
   // Hide app window
   [self.window orderOut:self];
   
 //  [self watchConfigFolder];
-
 }
 
 - (void)setupMenu
 {
-  NSMenu *menu = [[NSMenu alloc] init];
-  [menu addItemWithTitle:@"Open Web App" action:@selector(openWebApp:) keyEquivalent:@""];
-  [menu addItem:[NSMenuItem separatorItem]];
-  [menu addItemWithTitle:@"Refresh" action:@selector(openWebApp:) keyEquivalent:@""];
-  [menu addItem:[NSMenuItem separatorItem]];
-  [menu addItemWithTitle:@"Add Project" action:@selector(openWebApp:) keyEquivalent:@""];
-//  [menu addItemWithTitle:@"Refresh" action:@selector(getUnreadEntries:) keyEquivalent:@""];
-//  if ([[[KMFeedbinCredentialStorage sharedCredentialStorage] credential] hasPassword]) {
-//    [menu addItemWithTitle:@"Log Out" action:@selector(logOut:) keyEquivalent:@""];
-//  } else {
-//    [menu addItemWithTitle:@"Log In" action:@selector(logIn:) keyEquivalent:@""];
-//  }
-  [menu addItem:[NSMenuItem separatorItem]];
-  [menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
-  self.statusItem.menu = menu;
+  self.menu = [[NSMenu alloc] init];
+  [self.menu addItemWithTitle:@"Open Web App" action:@selector(openWebApp:) keyEquivalent:@""];
+  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self.menu addItemWithTitle:@"Refresh" action:@selector(openWebApp:) keyEquivalent:@""];
+  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self.menu addItemWithTitle:@"Add Project" action:@selector(createNewProject:) keyEquivalent:@""];
+  //  [menu addItemWithTitle:@"Refresh" action:@selector(getUnreadEntries:) keyEquivalent:@""];
+  //  if ([[[KMFeedbinCredentialStorage sharedCredentialStorage] credential] hasPassword]) {
+  //    [menu addItemWithTitle:@"Log Out" action:@selector(logOut:) keyEquivalent:@""];
+  //  } else {
+  //    [menu addItemWithTitle:@"Log In" action:@selector(logIn:) keyEquivalent:@""];
+  //  }
+  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self.menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
+  self.statusItem.menu = self.menu;
   
-  [menu addItem:[NSMenuItem separatorItem]];
-  
+  [self.menu addItem:[NSMenuItem separatorItem]];
+}
+
+- (void)setupProjects
+{
+  self.projects = [NSMutableArray array];
   AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
   [manager GET:@"http://localhost:8888/index.php/me/projects" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
     
-    self.projects = responseObject;
-    NSLog(@"got json %@", responseObject);
     for(id project in responseObject) {
-      
-      NSMutableArray *mPaths = [NSMutableArray array];
-      for (NSDictionary *directory in [project objectForKey:@"directories"]) {
-        [mPaths addObject:[directory objectForKey:@"path"]];
-      }
-      NSArray *paths = [mPaths copy];
-      [self watchPaths:paths forProject:project];
-      
-      // Setup menu item
-      NSMenuItem *projectMenuItem = [menu addItemWithTitle:[project objectForKey:@"name"] action:@selector(addDirectoriesToProject:) keyEquivalent:@""];
-      [projectMenuItem setTarget:self];
-      [projectMenuItem setRepresentedObject:project];
+      [self setupProject:project];
     }
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: %@", error);
   }];
-
 }
 
-- (void)addDirectoriesToProject:(id)sender
+
+- (void)setupProject:(NSDictionary *)project
+{
+  [self.projects addObject:project];
+  [self watchProject:project];
+  [self createMenuItemForProject:project];
+}
+
+- (void)watchProject:(NSDictionary *)project
+{
+  NSMutableArray *mPaths = [NSMutableArray array];
+  for (NSDictionary *directory in [project objectForKey:@"directories"]) {
+    [mPaths addObject:[directory objectForKey:@"path"]];
+  }
+  NSArray *paths = [mPaths copy];
+  [self watchPaths:paths forProject:project];
+}
+
+- (NSMenuItem *)createMenuItemForProject:(NSDictionary *)project
+{
+  NSMenuItem *projectMenuItem = [self.menu addItemWithTitle:[project objectForKey:@"name"] action:@selector(showAddDirectoriesToProject:) keyEquivalent:@""];
+  [projectMenuItem setTarget:self];
+  [projectMenuItem setRepresentedObject:project];
+  return projectMenuItem;
+}
+
+- (void)showAddDirectoriesToProject:(id)sender
 {
   NSDictionary *project = [sender representedObject];
+  [self addDirectoriesToProject:project];
+}
 
+- (void)addDirectoriesToProject:(NSDictionary *)project
+{
   NSOpenPanel *panel = [NSOpenPanel openPanel];
   [panel setAllowsMultipleSelection:YES];
   [panel setCanChooseDirectories:YES];
@@ -108,6 +128,40 @@
   }
 }
 
+- (void)createNewProject:(id)sender
+{
+  NSAlert *alert = [NSAlert alertWithMessageText:@"Create a new project"
+                                   defaultButton:@"OK"
+                                 alternateButton:@"Cancel"
+                                     otherButton:nil
+                       informativeTextWithFormat:@"What's your projects name?"];
+  NSTextField *input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 200, 24)];
+  [input setStringValue:@"Hello"];
+  [alert setAccessoryView:input];
+  
+  NSInteger button = [alert runModal];
+  if (button == NSAlertDefaultReturn) {
+    [input validateEditing];
+    
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSDictionary *parameters = @{@"name": [input stringValue]};
+
+    [manager POST:@"http://localhost:8888/index.php/me/projects" parameters:parameters success:^(AFHTTPRequestOperation *operation, id project) {
+      NSLog(@"JSON: %@", project);
+      [self setupProject:project];
+      [self addDirectoriesToProject:project];
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+      NSLog(@"Error: %@", error);
+    }];
+    
+//    return [input stringValue];
+  } else if (button == NSAlertAlternateReturn) {
+//    return nil;
+  } else {
+//    NSAssert1(NO, @"Invalid input dialog button %d", button);
+//    return nil;
+  }
+}
 - (void)openWebApp:(id)sender
 {
   NSURL *URL = [NSURL URLWithString:@"http://localhost:8888/index.php/me/projects"];

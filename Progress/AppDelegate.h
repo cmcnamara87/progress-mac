@@ -12,6 +12,7 @@
 
 @property (assign) IBOutlet NSWindow *window;
 @property (strong, nonatomic) NSStatusItem *statusItem;
-@property (strong, nonatomic) NSArray *projects;
+@property (strong, nonatomic) NSMutableArray *projects;
+@property (strong, nonatomic) NSMenu *menu;
 
 @end

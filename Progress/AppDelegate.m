@@ -130,10 +130,29 @@ id refToSelf; // reference to self for C function
 
 - (NSMenuItem *)createMenuItemForProject:(NSDictionary *)project
 {
-  NSMenuItem *projectMenuItem = [self.menu insertItemWithTitle:[project objectForKey:@"name"] action:@selector(showAddDirectoriesToProject:) keyEquivalent:@"" atIndex:4];
+  NSMenuItem *projectMenuItem = [self.menu insertItemWithTitle:[project objectForKey:@"name"] action:@selector(showOpenProject:) keyEquivalent:@"" atIndex:4];
   [projectMenuItem setTarget:self];
   [projectMenuItem setRepresentedObject:project];
   return projectMenuItem;
+}
+
+- (void)showOpenProject:(id)sender
+{
+  NSDictionary *project = [sender representedObject];
+  NSAlert *alert = [NSAlert alertWithMessageText:[project objectForKey:@"name"]
+                                   defaultButton:@"View Project"
+                                 alternateButton:@"Cancel"
+                                     otherButton:nil
+                       informativeTextWithFormat:@""];
+  [alert addButtonWithTitle:@"Add folders"];
+  
+  NSInteger button = [alert runModal];
+  
+  if (button == NSAlertThirdButtonReturn) {
+    [self addDirectoriesToProject:project];
+  } else if (button == NSAlertDefaultReturn) {
+    [self openWebApp:nil];
+  }
 }
 
 - (void)showAddDirectoriesToProject:(id)sender
@@ -183,7 +202,7 @@ id refToSelf; // reference to self for C function
                                      otherButton:nil
                        informativeTextWithFormat:@"What's your projects name?"];
   NSTextField *input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 200, 24)];
-  [input setStringValue:@"Hello"];
+  [input setStringValue:@""];
   [alert setAccessoryView:input];
   
   NSInteger button = [alert runModal];

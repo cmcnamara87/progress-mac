@@ -7,6 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "AFNetworking.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
@@ -14,5 +15,7 @@
 @property (strong, nonatomic) NSStatusItem *statusItem;
 @property (strong, nonatomic) NSMutableArray *projects;
 @property (strong, nonatomic) NSMenu *menu;
+@property (strong, nonatomic) AFHTTPRequestOperationManager *manager;
 
+- (void)loggedIn:(NSDictionary *)user;
 @end

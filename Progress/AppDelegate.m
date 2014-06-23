@@ -7,25 +7,38 @@
 //
 
 #import "AppDelegate.h"
-#import "AFNetworking.h"
+#import "LoginWindowController.h"
+
+static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
+
+
+@interface AppDelegate ()
+  @property (strong, nonatomic) LoginWindowController *logInWindowController;
+  @property (strong, nonatomic) NSDictionary *user;
+@end
 
 @implementation AppDelegate
+
+id refToSelf; // reference to self for C function
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
   // Insert code here to initialize your application
+  refToSelf = self;
   
   NSStatusBar *statusBar = [NSStatusBar systemStatusBar];
   self.statusItem.title = @"";
   self.statusItem = [statusBar statusItemWithLength:NSVariableStatusItemLength];
   self.statusItem.highlightMode = YES;
   [self.statusItem setImage:[NSImage imageNamed:@"icon.png"]];
-  
-  [self setupMenu];
-  [self setupProjects];
 
+  NSURL *baseUrl = [NSURL URLWithString:BASE_URL_STRING];
+  self.manager = [[AFHTTPRequestOperationManager manager] initWithBaseURL:baseUrl];
+  
   // Hide app window
   [self.window orderOut:self];
+  
+  [self setupMenu];
   
 //  [self watchConfigFolder];
 }
@@ -34,28 +47,57 @@
 {
   self.menu = [[NSMenu alloc] init];
   [self.menu addItemWithTitle:@"Open Web App" action:@selector(openWebApp:) keyEquivalent:@""];
+  
+  [self.menu addItemWithTitle:@"Log In" action:@selector(logIn:) keyEquivalent:@""];
   [self.menu addItem:[NSMenuItem separatorItem]];
-  [self.menu addItemWithTitle:@"Refresh" action:@selector(openWebApp:) keyEquivalent:@""];
-  [self.menu addItem:[NSMenuItem separatorItem]];
-  [self.menu addItemWithTitle:@"Add Project" action:@selector(createNewProject:) keyEquivalent:@""];
+  [self.menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
+  self.statusItem.menu = self.menu;
+  
+}
+
+- (void)loggedIn:(NSDictionary *)user
+{
+  self.user = user;
+//  [self setupMenu];
+  [self.menu removeItemAtIndex:1];
+  [self.menu insertItem:[NSMenuItem separatorItem] atIndex:1];
+  [self.menu insertItemWithTitle:@"Add Project" action:@selector(createNewProject:) keyEquivalent:@"" atIndex:2];
+    [self.menu insertItem:[NSMenuItem separatorItem] atIndex:3];
   //  [menu addItemWithTitle:@"Refresh" action:@selector(getUnreadEntries:) keyEquivalent:@""];
   //  if ([[[KMFeedbinCredentialStorage sharedCredentialStorage] credential] hasPassword]) {
   //    [menu addItemWithTitle:@"Log Out" action:@selector(logOut:) keyEquivalent:@""];
   //  } else {
   //    [menu addItemWithTitle:@"Log In" action:@selector(logIn:) keyEquivalent:@""];
   //  }
-  [self.menu addItem:[NSMenuItem separatorItem]];
-  [self.menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
-  self.statusItem.menu = self.menu;
+//  [self.menu addItem:[NSMenuItem separatorItem]];
+//  [self.menu addItem:[NSMenuItem separatorItem]];
   
-  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self setupProjects];
+}
+
+
+
+- (void)logIn:(id)sender
+{
+  NSLog(@"Show login");
+  if (!_logInWindowController) {
+    NSLog(@"making contrlller");
+    _logInWindowController = [[LoginWindowController alloc] init];
+  }
+  [self.logInWindowController showWindow:nil];
+    [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
+//  [self.logInWindowController showWindowWithCompletionHandler:^(NSURLCredential *credential){
+//    [[KMFeedbinCredentialStorage sharedCredentialStorage] setCredential:credential];
+//    [self getUnreadEntries:self];
+//    [self setupMenu];
+//  }];
+//  [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
 }
 
 - (void)setupProjects
 {
   self.projects = [NSMutableArray array];
-  AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
-  [manager GET:@"http://localhost:8888/index.php/me/projects" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+  [self.manager GET:@"me/projects" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
     
     for(id project in responseObject) {
       [self setupProject:project];
@@ -80,12 +122,15 @@
     [mPaths addObject:[directory objectForKey:@"path"]];
   }
   NSArray *paths = [mPaths copy];
-  [self watchPaths:paths forProject:project];
+  
+  if([paths count]) {
+    [self watchPaths:paths forProject:project];
+  }
 }
 
 - (NSMenuItem *)createMenuItemForProject:(NSDictionary *)project
 {
-  NSMenuItem *projectMenuItem = [self.menu addItemWithTitle:[project objectForKey:@"name"] action:@selector(showAddDirectoriesToProject:) keyEquivalent:@""];
+  NSMenuItem *projectMenuItem = [self.menu insertItemWithTitle:[project objectForKey:@"name"] action:@selector(showAddDirectoriesToProject:) keyEquivalent:@"" atIndex:4];
   [projectMenuItem setTarget:self];
   [projectMenuItem setRepresentedObject:project];
   return projectMenuItem;
@@ -103,29 +148,31 @@
   [panel setAllowsMultipleSelection:YES];
   [panel setCanChooseDirectories:YES];
   [panel setCanChooseFiles:NO];
-  NSInteger clicked = [panel runModal];
+//  NSInteger clicked = [panel runModal];
   
-  if (clicked == NSFileHandlingPanelOKButton) {
-    // Get out all the paths
-    NSMutableArray *paths = [NSMutableArray array];
-    
-    for (NSURL *url in [panel URLs] ) {
-      [paths addObject:[url path]];
+  [panel beginWithCompletionHandler:^(NSInteger result) {
+    if (result == NSFileHandlingPanelOKButton) {
+      // Get out all the paths
+      NSMutableArray *paths = [NSMutableArray array];
       
-      AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
-      NSDictionary *parameters = @{@"path": [url path]};
-      NSString *url = [NSString stringWithFormat:@"http://localhost:8888/index.php/me/projects/%@/directories", [project objectForKey:@"id"]];
-      NSLog(@"Posting to %@", url);
-      [manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        NSLog(@"JSON: %@", responseObject);
-      } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        NSLog(@"Error: %@", error);
-      }];
+      for (NSURL *url in [panel URLs] ) {
+        [paths addObject:[url path]];
+        
+        NSDictionary *parameters = @{@"path": [url path]};
+        NSString *url = [NSString stringWithFormat:@"me/projects/%@/directories", [project objectForKey:@"id"]];
+        NSLog(@"Posting to %@", url);
+        [self.manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+          NSLog(@"JSON: %@", responseObject);
+        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+          NSLog(@"Error: %@", error);
+        }];
+      }
+      
+      // Start watching those paths
+      [self watchPaths:[paths copy] forProject:project];
     }
-    
-    // Start watching those paths
-    [self watchPaths:[paths copy] forProject:project];
-  }
+  }];
+
 }
 
 - (void)createNewProject:(id)sender
@@ -143,10 +190,9 @@
   if (button == NSAlertDefaultReturn) {
     [input validateEditing];
     
-    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
     NSDictionary *parameters = @{@"name": [input stringValue]};
 
-    [manager POST:@"http://localhost:8888/index.php/me/projects" parameters:parameters success:^(AFHTTPRequestOperation *operation, id project) {
+    [self.manager POST:@"me/projects" parameters:parameters success:^(AFHTTPRequestOperation *operation, id project) {
       NSLog(@"JSON: %@", project);
       [self setupProject:project];
       [self addDirectoriesToProject:project];
@@ -164,7 +210,9 @@
 }
 - (void)openWebApp:(id)sender
 {
-  NSURL *URL = [NSURL URLWithString:@"http://localhost:8888/index.php/me/projects"];
+  NSString *urlString = [NSString stringWithFormat:@"%@users/%@/projects",BASE_URL_STRING, [self.user objectForKey:@"id"]];
+  NSURL *URL = [NSURL URLWithString:urlString];
+  
   [[NSWorkspace sharedWorkspace] openURL:URL];
 }
 
@@ -232,11 +280,10 @@ void projectContentChanged(
   NSMutableDictionary *project = (__bridge NSMutableDictionary *)(clientCallBackInfo);
   
   // Add progress to each project
-  AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
   NSDictionary *parameters = @{@"foo": @"bar"};
-  NSString *url = [NSString stringWithFormat:@"http://localhost:8888/index.php/me/projects/%@/progress", [project objectForKey:@"id"]];
+  NSString *url = [NSString stringWithFormat:@"me/projects/%@/progress", [project objectForKey:@"id"]];
   NSLog(@"url %@", url);
-  [manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+  [[refToSelf manager] POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
     NSLog(@"JSON: %@", responseObject);
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: %@", error);

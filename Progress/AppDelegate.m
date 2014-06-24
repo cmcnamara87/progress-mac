@@ -36,7 +36,7 @@ id refToSelf; // reference to self for C function
   self.manager = [[AFHTTPRequestOperationManager manager] initWithBaseURL:baseUrl];
   
   // Hide app window
-  [self.window orderOut:self];
+//  [self.window orderOut:self];
   
   [self setupMenu];
   

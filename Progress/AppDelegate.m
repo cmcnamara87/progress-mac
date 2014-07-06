@@ -43,7 +43,7 @@ id refToSelf; // reference to self for C function
   // Hide app window
 //  [self.window orderOut:self];
   
-  [self setupMenu];
+  [self setupDefaultMenu];
   
   // Setup login protection space
   NSURLCredential *credential;
@@ -79,37 +79,61 @@ id refToSelf; // reference to self for C function
 //  [self watchConfigFolder];
 }
 
-- (void)setupMenu
+
+- (void)setupLoggedInMenu
 {
-  self.menu = [[NSMenu alloc] init];
+  if(!_menu) {
+    self.menu = [[NSMenu alloc] init];
+    self.statusItem.menu = self.menu;
+  } else {
+    [self.menu removeAllItems];
+  }
   [self.menu addItemWithTitle:@"Open Web App" action:@selector(openWebApp:) keyEquivalent:@""];
-  
+  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self.menu addItemWithTitle:@"Add Project" action:@selector(createNewProject:) keyEquivalent:@""];
+  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self.menu addItem:[NSMenuItem separatorItem]];
+  [self.menu addItemWithTitle:@"Quit" action:@selector(quit:) keyEquivalent:@""];
+}
+
+- (void)setupDefaultMenu
+{
+  if(!_menu) {
+    self.menu = [[NSMenu alloc] init];
+    self.statusItem.menu = self.menu;
+  } else {
+    [self.menu removeAllItems];
+  }
+  [self.menu addItemWithTitle:@"Open Web App" action:@selector(openWebApp:) keyEquivalent:@""];
   [self.menu addItemWithTitle:@"Log In" action:@selector(logIn:) keyEquivalent:@""];
   [self.menu addItem:[NSMenuItem separatorItem]];
-  [self.menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
-  self.statusItem.menu = self.menu;
+  [self.menu addItemWithTitle:@"Quit" action:@selector(quit:) keyEquivalent:@""];
 }
 
 - (void)loggedIn:(NSDictionary *)user
 {
   self.user = user;
-//  [self setupMenu];
-  [self.menu removeItemAtIndex:1];
-  [self.menu insertItem:[NSMenuItem separatorItem] atIndex:1];
-  [self.menu insertItemWithTitle:@"Add Project" action:@selector(createNewProject:) keyEquivalent:@"" atIndex:2];
-    [self.menu insertItem:[NSMenuItem separatorItem] atIndex:3];
-  //  [menu addItemWithTitle:@"Refresh" action:@selector(getUnreadEntries:) keyEquivalent:@""];
-  //  if ([[[KMFeedbinCredentialStorage sharedCredentialStorage] credential] hasPassword]) {
-  //    [menu addItemWithTitle:@"Log Out" action:@selector(logOut:) keyEquivalent:@""];
-  //  } else {
-  //    [menu addItemWithTitle:@"Log In" action:@selector(logIn:) keyEquivalent:@""];
-  //  }
-//  [self.menu addItem:[NSMenuItem separatorItem]];
-//  [self.menu addItem:[NSMenuItem separatorItem]];
-  
+  [self setupLoggedInMenu];
   [self setupProjects];
 }
 
+- (void)quit:(id)sender
+{
+  // log out
+  [self.manager POST:@"users/logout" parameters:@{} success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    // Logout
+  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    NSLog(@"Error: Couldn't log out %@", error);
+  }];
+  
+  // Destroy credentails
+  NSDictionary *credentials = [[NSURLCredentialStorage sharedCredentialStorage] credentialsForProtectionSpace:self.loginProtectionSpace];
+  NSURLCredential *credential = [credentials.objectEnumerator nextObject];
+  [[NSURLCredentialStorage sharedCredentialStorage] removeCredential:credential forProtectionSpace:self.loginProtectionSpace];
+  
+  // Quit app
+  [[NSApplication sharedApplication] terminate:nil];
+}
 
 
 - (void)logIn:(id)sender

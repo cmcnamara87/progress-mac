@@ -10,6 +10,7 @@
 #import "LoginWindowController.h"
 
 static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
+static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
 
 
 @interface AppDelegate ()
@@ -26,19 +27,54 @@ id refToSelf; // reference to self for C function
   // Insert code here to initialize your application
   refToSelf = self;
   
+//  [[NSUserDefaults standardUserDefaults] registerDefaults:@{@"KMFeedbinRefreshInterval": @120}];
+//  NSTimeInterval ti = [[NSUserDefaults standardUserDefaults] doubleForKey:@"KMFeedbinRefreshInterval"];
+//  [NSTimer scheduledTimerWithTimeInterval:ti target:self selector:@selector(getUnreadEntries:) userInfo:nil repeats:YES];
+  
   NSStatusBar *statusBar = [NSStatusBar systemStatusBar];
   self.statusItem.title = @"";
   self.statusItem = [statusBar statusItemWithLength:NSVariableStatusItemLength];
   self.statusItem.highlightMode = YES;
-  [self.statusItem setImage:[NSImage imageNamed:@"icon.png"]];
+  [self.statusItem setImage:[NSImage imageNamed:@"3.png"]];
 
-  NSURL *baseUrl = [NSURL URLWithString:BASE_URL_STRING];
+  NSURL *baseUrl = [NSURL URLWithString:BASE_API_URL_STRING];
   self.manager = [[AFHTTPRequestOperationManager manager] initWithBaseURL:baseUrl];
   
   // Hide app window
 //  [self.window orderOut:self];
   
   [self setupMenu];
+  
+  // Setup login protection space
+  NSURLCredential *credential;
+  NSDictionary *credentials;
+  NSURL *url = [NSURL URLWithString:@"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com"];
+  self.loginProtectionSpace = [[NSURLProtectionSpace alloc] initWithHost:url.host
+                                                                    port:[url.port integerValue]
+                                                                protocol:url.scheme
+                                                                   realm:nil
+                                                    authenticationMethod:NSURLAuthenticationMethodHTTPDigest];
+  
+  credentials = [[NSURLCredentialStorage sharedCredentialStorage] credentialsForProtectionSpace:self.loginProtectionSpace];
+  credential = [credentials.objectEnumerator nextObject];
+  
+  if(credential) {
+    NSLog(@"User %@ already connected with password %@", credential.user, credential.password);
+    // Log them in
+    NSDictionary *parameters = @{@"email": credential.user, @"password": credential.password};
+    [self.manager POST:@"users/login" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+      // Login successful, store credentials
+      [self loggedIn:responseObject];
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+      [self logIn:nil];
+      NSLog(@"Error: Couldn't log in with %@, shw login, %@", credentials, error);
+    }];
+  } else {
+    [self logIn:nil];
+    NSLog(@"Not logged in, show login");
+  }
+  
+  
   
 //  [self watchConfigFolder];
 }
@@ -52,7 +88,6 @@ id refToSelf; // reference to self for C function
   [self.menu addItem:[NSMenuItem separatorItem]];
   [self.menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
   self.statusItem.menu = self.menu;
-  
 }
 
 - (void)loggedIn:(NSDictionary *)user
@@ -85,7 +120,7 @@ id refToSelf; // reference to self for C function
     _logInWindowController = [[LoginWindowController alloc] init];
   }
   [self.logInWindowController showWindow:nil];
-    [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
+  [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
 //  [self.logInWindowController showWindowWithCompletionHandler:^(NSURLCredential *credential){
 //    [[KMFeedbinCredentialStorage sharedCredentialStorage] setCredential:credential];
 //    [self getUnreadEntries:self];
@@ -229,7 +264,7 @@ id refToSelf; // reference to self for C function
 }
 - (void)openWebApp:(id)sender
 {
-  NSString *urlString = [NSString stringWithFormat:@"%@users/%@/projects",BASE_URL_STRING, [self.user objectForKey:@"id"]];
+  NSString *urlString = [NSString stringWithFormat:@"%@users/%@/projects", BASE_API_URL_STRING, [self.user objectForKey:@"id"]];
   NSURL *URL = [NSURL URLWithString:urlString];
   
   [[NSWorkspace sharedWorkspace] openURL:URL];

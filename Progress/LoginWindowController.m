@@ -59,7 +59,9 @@
 
   NSDictionary *parameters = @{@"email": self.emailTextField.stringValue};
   [appDelegate.manager POST:@"users/login" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
-    NSLog(@"JSON: %@", responseObject);
+    
+    // Login successful, store credentials
+    [self storeCredentials];
     [self close];
     [appDelegate loggedIn:responseObject];
     
@@ -67,6 +69,15 @@
     NSLog(@"Error: %@", error);
   }];
   
+}
+
+- (NSURLCredential *)storeCredentials
+{
+  AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
+  NSURLCredential *credential;
+  credential = [NSURLCredential credentialWithUser:self.emailTextField.stringValue password:self.passwordTextField.stringValue persistence:NSURLCredentialPersistencePermanent];
+  [[NSURLCredentialStorage sharedCredentialStorage] setCredential:credential forProtectionSpace:appDelegate.loginProtectionSpace];
+  return credential;
 }
 
 @end

@@ -16,6 +16,7 @@
 @property (strong, nonatomic) NSMutableArray *projects;
 @property (strong, nonatomic) NSMenu *menu;
 @property (strong, nonatomic) AFHTTPRequestOperationManager *manager;
+@property (strong, nonatomic) NSURLProtectionSpace *loginProtectionSpace;
 
 - (void)loggedIn:(NSDictionary *)user;
 @end

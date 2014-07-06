@@ -57,7 +57,7 @@
 {
   AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
 
-  NSDictionary *parameters = @{@"email": self.emailTextField.stringValue};
+  NSDictionary *parameters = @{@"email": self.emailTextField.stringValue, @"password": self.passwordTextField.stringValue};
   [appDelegate.manager POST:@"users/login" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
     
     // Login successful, store credentials
@@ -68,7 +68,6 @@
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: %@", error);
   }];
-  
 }
 
 - (NSURLCredential *)storeCredentials

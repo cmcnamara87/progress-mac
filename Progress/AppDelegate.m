@@ -16,6 +16,7 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
 @interface AppDelegate ()
   @property (strong, nonatomic) LoginWindowController *logInWindowController;
   @property (strong, nonatomic) NSDictionary *user;
+  @property (strong, nonatomic) NSTimer *workingTimer;
 @end
 
 @implementation AppDelegate
@@ -35,7 +36,7 @@ id refToSelf; // reference to self for C function
   self.statusItem.title = @"";
   self.statusItem = [statusBar statusItemWithLength:NSVariableStatusItemLength];
   self.statusItem.highlightMode = YES;
-  [self.statusItem setImage:[NSImage imageNamed:@"3.png"]];
+  [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
 
   NSURL *baseUrl = [NSURL URLWithString:BASE_API_URL_STRING];
   self.manager = [[AFHTTPRequestOperationManager manager] initWithBaseURL:baseUrl];
@@ -202,7 +203,7 @@ id refToSelf; // reference to self for C function
                                    defaultButton:@"View Project"
                                  alternateButton:@"Cancel"
                                      otherButton:nil
-                       informativeTextWithFormat:@""];
+                       informativeTextWithFormat:@"Add more folders to watch, or view the project"];
   [alert addButtonWithTitle:@"Add folders"];
   
   NSInteger button = [alert runModal];
@@ -366,7 +367,11 @@ void projectContentChanged(
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: %@", error);
   }];
+  
+  [[refToSelf statusItem] setImage:[NSImage imageNamed:@"icon-in-18x18.png"]];
 
+  [refToSelf setWorkingTimer:[NSTimer scheduledTimerWithTimeInterval:(15*60) target:refToSelf selector:@selector(disableWorkingIcon:) userInfo:nil repeats:NO]];
+  
   // Get out the weekly progress object for that goal
 //  LHWeeklyProgress *weeklyProgress = [goal progressThisWeek];
   
@@ -396,6 +401,12 @@ void projectContentChanged(
   
 //  NSLog(@"The Goal is %@ minutesCompleted: %@", [goal valueForKey:@"title"], [weeklyProgress minutesCompleted]);;
   
+}
+
+- (void)disableWorkingIcon:(NSTimer*)timer
+{
+  NSLog(@"disable working timer????");
+   [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
 }
 
 @end

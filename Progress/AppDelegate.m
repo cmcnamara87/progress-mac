@@ -9,7 +9,7 @@
 #import "AppDelegate.h"
 #import "LoginWindowController.h"
 
-static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
+static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/";
 static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
 
 
@@ -289,7 +289,8 @@ id refToSelf; // reference to self for C function
 }
 - (void)openWebApp:(id)sender
 {
-  NSString *urlString = [NSString stringWithFormat:@"%@users/%@/projects", BASE_API_URL_STRING, [self.user objectForKey:@"id"]];
+
+  NSString *urlString = [NSString stringWithFormat:@"%@#/user/%@/projects", BASE_URL_STRING, [self.user objectForKey:@"id"]];
   NSURL *URL = [NSURL URLWithString:urlString];
   
   [[NSWorkspace sharedWorkspace] openURL:URL];

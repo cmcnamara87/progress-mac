@@ -371,6 +371,11 @@ void projectContentChanged(
   
   [[refToSelf statusItem] setImage:[NSImage imageNamed:@"icon-in-18x18.png"]];
 
+  // Invalid existing timer
+  if([refToSelf workingTimer]) {
+    [[refToSelf workingTimer] invalidate];
+    [refToSelf setWorkingTimer:nil];
+  }
   [refToSelf setWorkingTimer:[NSTimer scheduledTimerWithTimeInterval:(15*60) target:refToSelf selector:@selector(disableWorkingIcon:) userInfo:nil repeats:NO]];
   
   // Get out the weekly progress object for that goal
@@ -407,6 +412,7 @@ void projectContentChanged(
 - (void)disableWorkingIcon:(NSTimer*)timer
 {
   NSLog(@"disable working timer????");
+  self.workingTimer = nil;
    [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
 }
 

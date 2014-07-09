@@ -17,6 +17,7 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
   @property (strong, nonatomic) LoginWindowController *logInWindowController;
   @property (strong, nonatomic) NSDictionary *user;
   @property (strong, nonatomic) NSTimer *workingTimer;
+  @property (strong, nonatomic) NSDictionary *activeProject;
 @end
 
 @implementation AppDelegate
@@ -75,11 +76,7 @@ id refToSelf; // reference to self for C function
     NSLog(@"Not logged in, show login");
   }
   
-  
-  
-//  [self watchConfigFolder];
 }
-
 
 - (void)setupLoggedInMenu
 {
@@ -369,14 +366,10 @@ void projectContentChanged(
     NSLog(@"Error: %@", error);
   }];
   
-  [[refToSelf statusItem] setImage:[NSImage imageNamed:@"icon-in-18x18.png"]];
+  [refToSelf setUserIsActiveInProject:project];
 
   // Invalid existing timer
-  if([refToSelf workingTimer]) {
-    [[refToSelf workingTimer] invalidate];
-    [refToSelf setWorkingTimer:nil];
-  }
-  [refToSelf setWorkingTimer:[NSTimer scheduledTimerWithTimeInterval:(15*60) target:refToSelf selector:@selector(disableWorkingIcon:) userInfo:nil repeats:NO]];
+
   
   // Get out the weekly progress object for that goal
 //  LHWeeklyProgress *weeklyProgress = [goal progressThisWeek];
@@ -409,11 +402,109 @@ void projectContentChanged(
   
 }
 
+- (void)setUserIsActiveInProject:(NSDictionary *)project
+{
+  self.activeProject = project;
+  // Setting active project
+  if(self.workingTimer) {
+    [self.workingTimer invalidate];
+  } else {
+    [self watchForScreenshots];
+  }
+  self.workingTimer = [NSTimer scheduledTimerWithTimeInterval:(15*60) target:refToSelf selector:@selector(disableWorkingIcon:) userInfo:nil repeats:NO];
+  [self.statusItem setImage:[NSImage imageNamed:@"icon-in-18x18.png"]];
+}
+
+- (void)setUserIsInactive
+{
+  // Removing active project
+  self.workingTimer = nil;
+  [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
+  [self stopWatchingForScreenshots];
+}
+
 - (void)disableWorkingIcon:(NSTimer*)timer
 {
-  NSLog(@"disable working timer????");
-  self.workingTimer = nil;
-   [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
+  [self setUserIsInactive];
 }
+
+- (void)watchForScreenshots
+{
+  NSLog(@"watching for screenshots now");
+  self.metadataSearch = [[NSMetadataQuery alloc] init];
+  
+  // Register the notifications for batch and completion updates
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(foundScreenshots:)
+                                               name:NSMetadataQueryDidUpdateNotification
+                                             object:_metadataSearch];
+  
+  [self.metadataSearch setPredicate:[NSPredicate predicateWithFormat:@"kMDItemIsScreenCapture = 1"]];
+  NSSortDescriptor *sortKeys = [[NSSortDescriptor alloc] initWithKey:(id)kMDItemFSCreationDate
+                                                           ascending:YES];
+  [self.metadataSearch setSortDescriptors:[NSArray arrayWithObject:sortKeys]];
+  [self.metadataSearch startQuery];
+}
+- (void)stopWatchingForScreenshots
+{
+  [self.metadataSearch disableUpdates];
+  self.metadataSearch = nil;
+}
+
+- (void)foundScreenshots:(id)sender
+{
+  NSLog(@"A data batch has been received");
+  
+  [self.metadataSearch disableUpdates];
+  
+  NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
+  NSString *path = [newestScreenshot valueForAttribute:(NSString *)kMDItemPath];
+  NSString *fileName = [newestScreenshot valueForAttribute:(NSString *)kMDItemFSName];
+  
+  // Popup alert
+  NSAlert *alert = [NSAlert alertWithMessageText:@"Progress"
+                                   defaultButton:@"Upload"
+                                 alternateButton:@"Cancel"
+                                     otherButton:nil
+                       informativeTextWithFormat:@"Upload your screenshot for '%@'?", [self.activeProject objectForKey:@"name"]];
+  [alert setIcon:[[NSImage alloc] initWithContentsOfFile:path]];
+  NSTextField *input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 200, 24)];
+  [[input cell] setPlaceholderString:@"What's this about?"];
+  [input setStringValue:@""];
+
+  [alert setAccessoryView:input];
+  
+  NSInteger button = [alert runModal];
+  
+  if (button == NSAlertDefaultReturn) {
+    NSLog(@"Upload screenshot now!");
+    [self uploadFilePath:path fileName:fileName forProject:self.activeProject text:[input stringValue]];
+  }
+  
+  [self.metadataSearch enableUpdates];
+}
+
+- (void)uploadFilePath:(NSString *)path fileName:(NSString *)fileName forProject:(NSDictionary *)project text:(NSString *)text
+{
+//  @"me/projects/%@/progress", [project objectForKey:@"id"]];
+  NSString *url = [NSString stringWithFormat:@"%@me/projects/%@/screenshots", BASE_API_URL_STRING, [project objectForKey:@"id"]];
+  NSLog(@"Sending screenshot to %@", url);
+  NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] multipartFormRequestWithMethod:@"POST" URLString:url parameters:@{@"text": text} constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+    [formData appendPartWithFileURL:[NSURL fileURLWithPath:path] name:@"file" fileName:fileName mimeType:@"image/jpeg" error:nil];
+  } error:nil];
+  
+  AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+  NSProgress *progress = nil;
+  
+  NSURLSessionUploadTask *uploadTask = [manager uploadTaskWithStreamedRequest:request progress:&progress completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
+    if (error) {
+      NSLog(@"Error: %@", error);
+    } else {
+      [self openWebApp:nil];
+    }
+  }];
+  [uploadTask resume];
+}
+
 
 @end

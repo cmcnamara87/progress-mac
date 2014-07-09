@@ -17,6 +17,7 @@
 @property (strong, nonatomic) NSMenu *menu;
 @property (strong, nonatomic) AFHTTPRequestOperationManager *manager;
 @property (strong, nonatomic) NSURLProtectionSpace *loginProtectionSpace;
+@property (nonatomic, strong) NSMetadataQuery *metadataSearch;
 
 - (void)loggedIn:(NSDictionary *)user;
 @end

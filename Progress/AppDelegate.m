@@ -493,6 +493,9 @@ void projectContentChanged(
     [formData appendPartWithFileURL:[NSURL fileURLWithPath:path] name:@"file" fileName:fileName mimeType:@"image/jpeg" error:nil];
   } error:nil];
   
+  // Hopefully this fixes it
+  [request setValue:0 forHTTPHeaderField:@"Content-Length"];
+  
   AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
   NSProgress *progress = nil;
   

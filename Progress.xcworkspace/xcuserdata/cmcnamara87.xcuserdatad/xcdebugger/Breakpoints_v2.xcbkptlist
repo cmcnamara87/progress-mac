@@ -20,11 +20,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Progress/AppDelegate.m"
-            timestampString = "426595608.565216"
+            timestampString = "427717971.852875"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "434"
-            endingLineNumber = "434"
+            startingLineNumber = "432"
+            endingLineNumber = "432"
             landmarkName = "-watchForScreenshots"
             landmarkType = "5">
          </BreakpointContent>

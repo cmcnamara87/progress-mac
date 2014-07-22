@@ -286,10 +286,8 @@ id refToSelf; // reference to self for C function
 }
 - (void)openWebApp:(id)sender
 {
-
-  NSString *urlString = [NSString stringWithFormat:@"%@#/user/%@/projects", BASE_URL_STRING, [self.user objectForKey:@"id"]];
+  NSString *urlString = @"http://cmcnamara87.github.io/progress";
   NSURL *URL = [NSURL URLWithString:urlString];
-  
   [[NSWorkspace sharedWorkspace] openURL:URL];
 }
 

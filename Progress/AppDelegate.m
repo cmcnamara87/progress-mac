@@ -12,12 +12,16 @@
 static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/";
 static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
 
-
 @interface AppDelegate ()
   @property (strong, nonatomic) LoginWindowController *logInWindowController;
   @property (strong, nonatomic) NSDictionary *user;
   @property (strong, nonatomic) NSTimer *workingTimer;
   @property (strong, nonatomic) NSDictionary *activeProject;
+  @property (strong, nonatomic) NSArray *online;
+  @property (strong, nonatomic) NSTimer *onlineTimer;
+  @property (strong, nonatomic) NSTimer *progressTimer;
+  @property (strong, nonatomic) NSTimer *screenshotTimer;
+  @property(nonatomic) BOOL hasProgress;
 @end
 
 @implementation AppDelegate
@@ -26,6 +30,8 @@ id refToSelf; // reference to self for C function
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
+
+//  [self showTakeScreenshotNotification:nil];
   // Insert code here to initialize your application
   refToSelf = self;
   
@@ -39,9 +45,11 @@ id refToSelf; // reference to self for C function
   self.statusItem.highlightMode = YES;
   [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
 
+  
+
   NSURL *baseUrl = [NSURL URLWithString:BASE_API_URL_STRING];
   self.manager = [[AFHTTPRequestOperationManager manager] initWithBaseURL:baseUrl];
-  
+
   // Hide app window
 //  [self.window orderOut:self];
   
@@ -75,7 +83,6 @@ id refToSelf; // reference to self for C function
     [self logIn:nil];
     NSLog(@"Not logged in, show login");
   }
-  
 }
 
 - (void)setupLoggedInMenu
@@ -87,9 +94,11 @@ id refToSelf; // reference to self for C function
     [self.menu removeAllItems];
   }
   [self.menu addItemWithTitle:@"Open Web App" action:@selector(openWebApp:) keyEquivalent:@""];
+  [self.menu addItemWithTitle:@"Online (0)" action:nil keyEquivalent:@""];
   [self.menu addItem:[NSMenuItem separatorItem]];
   [self.menu addItemWithTitle:@"Add Project" action:@selector(createNewProject:) keyEquivalent:@""];
   [self.menu addItem:[NSMenuItem separatorItem]];
+//  [self.menu addItemWithTitle:@"FARTS" action:nil keyEquivalent:@""];
   [self.menu addItem:[NSMenuItem separatorItem]];
   [self.menu addItemWithTitle:@"Quit" action:@selector(quit:) keyEquivalent:@""];
 }
@@ -110,13 +119,77 @@ id refToSelf; // reference to self for C function
 
 - (void)loggedIn:(NSDictionary *)user
 {
+  NSLog(@"User has logged in");
+  
   self.user = user;
   [self setupLoggedInMenu];
   [self setupProjects];
+  
+  self.online = [NSMutableArray array];
+  // Add online menu item
+  [self checkOnline];
+  
+  self.onlineTimer = [NSTimer scheduledTimerWithTimeInterval:(15*60) target:self selector:@selector(checkOnlineTimer:) userInfo:nil repeats:YES];
 }
 
+- (void)checkOnlineTimer:(NSTimer*)timer
+{
+  [self checkOnline];
+}
+
+- (void)checkOnline
+{
+  NSLog(@"Checking for online users");
+  // Get users online
+
+  [self.manager GET:@"me/following/online" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+  
+    [self.menu removeItemAtIndex:1];
+    [self.menu insertItemWithTitle:[NSString stringWithFormat:@"Online (%lu)", (unsigned long)[responseObject count]] action:nil keyEquivalent:@"" atIndex:1];
+    
+    for(id onliner in responseObject) {
+      if([[onliner objectForKey:@"id"] intValue] == [[self.user objectForKey:@"id"] intValue]) {
+        NSLog(@"You are online");
+        continue;
+      }
+      BOOL exists = NO;
+      for(id existingOnliner in self.online) {
+        if([[existingOnliner objectForKey:@"id"] intValue] == [[onliner objectForKey:@"id"] intValue]) {
+          exists = YES;
+        }
+      }
+      if(exists == NO) {
+        NSLog(@"user is online %@", [onliner objectForKey:@"name"]);
+        
+        //Initalize new notification
+        NSUserNotification *notification = [[NSUserNotification alloc] init];
+        //Set the title of the notification
+        [notification setTitle:[NSString stringWithFormat:@"%@ started working", [onliner objectForKey:@"name"]]];
+        //Set the text of the notification
+        [notification setInformativeText:[NSString stringWithFormat:@"on %@", [[onliner objectForKey:@"activeProject"] objectForKey:@"name"]]];
+        //Set the time and date on which the nofication will be deliverd (for example 20 secons later than the current date and time)
+        [notification setDeliveryDate:[NSDate dateWithTimeInterval:20 sinceDate:[NSDate date]]];
+        //Set the sound, this can be either nil for no sound, NSUserNotificationDefaultSoundName for the default sound (tri-tone) and a string of a .caf file that is in the bundle (filname and extension)
+        //        [notification setSoundName:NSUserNotificationDefaultSoundName];
+        [notification setSoundName:NSUserNotificationDefaultSoundName];
+        
+        //Get the default notification center
+        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
+        //Scheldule our NSUserNotification
+        [center scheduleNotification:notification];
+      }
+    }
+    
+    self.online = responseObject;
+    
+  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    NSLog(@"Error: %@", error);
+  }];
+}
 - (void)quit:(id)sender
 {
+  [self.onlineTimer invalidate];
+  [self.workingTimer invalidate];
   // log out
   [self.manager POST:@"users/logout" parameters:@{} success:^(AFHTTPRequestOperation *operation, id responseObject) {
     // Logout
@@ -187,7 +260,7 @@ id refToSelf; // reference to self for C function
 
 - (NSMenuItem *)createMenuItemForProject:(NSDictionary *)project
 {
-  NSMenuItem *projectMenuItem = [self.menu insertItemWithTitle:[project objectForKey:@"name"] action:@selector(showOpenProject:) keyEquivalent:@"" atIndex:4];
+  NSMenuItem *projectMenuItem = [self.menu insertItemWithTitle:[project objectForKey:@"name"] action:@selector(showOpenProject:) keyEquivalent:@"" atIndex:5];
   [projectMenuItem setTarget:self];
   [projectMenuItem setRepresentedObject:project];
   return projectMenuItem;
@@ -284,9 +357,48 @@ id refToSelf; // reference to self for C function
 //    return nil;
   }
 }
+
+- (void)madeProgress
+{
+  if(!self.hasProgress) {
+    [self sendProgress];
+    self.hasProgress = YES;
+    self.progressTimer = [NSTimer scheduledTimerWithTimeInterval:(2*60) target:self selector:@selector(timeToSendProgress:) userInfo:nil repeats:NO];
+  } else {
+    NSLog(@"Gobbling progress.");
+  }
+  
+  if(!self.screenshotTimer) {
+    self.screenshotTimer = [NSTimer scheduledTimerWithTimeInterval:(30*60) target:self selector:@selector(showTakeScreenshotNotification:) userInfo:nil repeats:YES];
+  }
+}
+- (void)timeToSendProgress:(NSTimer *)progressTimer
+{
+  NSLog(@"Gobbing time is up.");
+  [self sendProgress];
+  self.hasProgress = NO;
+}
+- (void)sendProgress
+{
+  NSLog(@"Sending progress.");
+  // Add progress to each project
+  NSDictionary *parameters = @{@"foo": @"bar"};
+  NSString *url = [NSString stringWithFormat:@"me/projects/%@/progress", [self.activeProject objectForKey:@"id"]];
+  NSLog(@"url %@", url);
+  [[refToSelf manager] POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    NSLog(@"JSON: %@", responseObject);
+  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    NSLog(@"Error: %@", error);
+  }];
+}
+
 - (void)openWebApp:(id)sender
 {
   NSString *urlString = @"http://cmcnamara87.github.io/progress";
+  if(self.user) {
+    // Overwrite with user url if they are logged in
+    urlString = @"http://cmcnamara87.github.io/progress/#/me/feed";
+  }
   NSURL *URL = [NSURL URLWithString:urlString];
   [[NSWorkspace sharedWorkspace] openURL:URL];
 }
@@ -353,18 +465,8 @@ void projectContentChanged(
   
   // Get out the goal that had the file changed event
   NSMutableDictionary *project = (__bridge NSMutableDictionary *)(clientCallBackInfo);
-  
-  // Add progress to each project
-  NSDictionary *parameters = @{@"foo": @"bar"};
-  NSString *url = [NSString stringWithFormat:@"me/projects/%@/progress", [project objectForKey:@"id"]];
-  NSLog(@"url %@", url);
-  [[refToSelf manager] POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
-    NSLog(@"JSON: %@", responseObject);
-  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-    NSLog(@"Error: %@", error);
-  }];
-  
   [refToSelf setUserIsActiveInProject:project];
+  [refToSelf madeProgress];
 
   // Invalid existing timer
 
@@ -400,6 +502,30 @@ void projectContentChanged(
   
 }
 
+- (void)showTakeScreenshotNotification:(NSTimer *)timer
+{
+  NSUserNotification *notification = [[NSUserNotification alloc] init];
+  // private api, delete later
+  
+  //Set the title of the notification
+  notification.title = @"You're making progress!";
+  //Set the text of the notification
+  notification.informativeText = @"Share a screenshot to keep track.";
+  //Set the time and date on which the nofication will be deliverd (for example 20 secons later than the current date and time)
+  notification.deliveryDate = [NSDate dateWithTimeInterval:2 sinceDate:[NSDate date]];
+  //Set the sound, this can be either nil for no sound, NSUserNotificationDefaultSoundName for the default sound (tri-tone) and a string of a .caf file that is in the bundle (filname and extension)
+  //        [notification setSoundName:NSUserNotificationDefaultSoundName];
+  notification.soundName = NSUserNotificationDefaultSoundName;
+  
+  //Get the default notification center
+  NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
+  //Scheldule our NSUserNotification
+  [center scheduleNotification:notification];
+  
+  [self.screenshotTimer invalidate];
+  self.screenshotTimer = nil;
+}
+
 - (void)setUserIsActiveInProject:(NSDictionary *)project
 {
   self.activeProject = project;
@@ -419,6 +545,8 @@ void projectContentChanged(
   self.workingTimer = nil;
   [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
   [self stopWatchingForScreenshots];
+  [self.screenshotTimer invalidate];
+  self.screenshotTimer = nil;
 }
 
 - (void)disableWorkingIcon:(NSTimer*)timer

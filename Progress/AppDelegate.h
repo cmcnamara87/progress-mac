@@ -9,6 +9,9 @@
 #import <Cocoa/Cocoa.h>
 #import "AFNetworking.h"
 
+static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/";
+static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
+
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
 @property (assign) IBOutlet NSWindow *window;
@@ -18,6 +21,7 @@
 @property (strong, nonatomic) AFHTTPRequestOperationManager *manager;
 @property (strong, nonatomic) NSURLProtectionSpace *loginProtectionSpace;
 @property (nonatomic, strong) NSMetadataQuery *metadataSearch;
+@property (strong, nonatomic) NSDictionary *activeProject;
 
 - (void)loggedIn:(NSDictionary *)user;
 @end

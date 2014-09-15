@@ -23,5 +23,6 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
 @property (nonatomic, strong) NSMetadataQuery *metadataSearch;
 @property (strong, nonatomic) NSDictionary *activeProject;
 
+- (void)openWebApp:(id)sender;
 - (void)loggedIn:(NSDictionary *)user;
 @end

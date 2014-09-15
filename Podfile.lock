@@ -17,11 +17,14 @@ PODS:
   - AFNetworking/Reachability (2.3.1)
   - AFNetworking/Security (2.3.1)
   - AFNetworking/Serialization (2.3.1)
+  - IYLoginItem (0.1)
 
 DEPENDENCIES:
   - AFNetworking (~> 2.2)
+  - IYLoginItem
 
 SPEC CHECKSUMS:
   AFNetworking: 6d7b76aa5d04c8c37daad3eef4b7e3f2a7620da3
+  IYLoginItem: dbdbc4636da5087b200f68456aa4367a1af35c1d
 
 COCOAPODS: 0.33.1

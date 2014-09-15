@@ -8,7 +8,7 @@
 
 #import "ScreenshotManager.h"
 #import "AppDelegate.h"
-
+#import "NotificationManager.h"
 @interface ScreenshotManager ()
   @property (nonatomic, strong) NSMetadataQuery *metadataSearch;
   @property (nonatomic, strong) NSDate *newestScreenshotCreationDate;
@@ -121,6 +121,7 @@
 
 - (void)uploadFilePath:(NSString *)path fileName:(NSString *)fileName forProject:(NSDictionary *)project text:(NSString *)text
 {
+  [[NotificationManager sharedManager] showUploadingScreenshot];
   
   //  NSString* apiUrl = @"http://example.com/upload";
   
@@ -163,6 +164,7 @@
                                                                                                 // Cleanup: remove temporary file.
                                                                                                 [[NSFileManager defaultManager] removeItemAtURL:tmpFileUrl error:nil];
                                                                                                 
+                                                                                                [[NotificationManager sharedManager] showScreenshotUploaded];
                                                                                                 // Do something with the result.
                                                                                                 if (error) {
                                                                                                   NSLog(@"Error: %@", error);

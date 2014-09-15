@@ -9,6 +9,8 @@
 #import "AppDelegate.h"
 #import "LoginWindowController.h"
 #import "ScreenshotManager.h"
+#import "NotificationManager.h"
+#import "NSBundle+LoginItem.h"
 
 
 @interface AppDelegate ()
@@ -24,10 +26,15 @@
 
 @implementation AppDelegate
 
+
 id refToSelf; // reference to self for C function
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
+  if(![[NSBundle mainBundle] isLoginItem]) {
+    [[NSBundle mainBundle] addToLoginItems];
+  }
+  NSLog(@"main bundle path %@", [[NSBundle mainBundle] bundlePath]);
 //  [self addToLoginItems];
   
 //  [self showTakeScreenshotNotification:nil];
@@ -141,7 +148,7 @@ id refToSelf; // reference to self for C function
 - (void)loggedIn:(NSDictionary *)user
 {
   NSLog(@"User has logged in");
-  
+  [[NotificationManager sharedManager] showLoggedIn];
   self.user = user;
   [self setupLoggedInMenu];
   [self setupProjects];
@@ -181,23 +188,7 @@ id refToSelf; // reference to self for C function
       }
       if(exists == NO) {
         NSLog(@"user is online %@", [onliner objectForKey:@"name"]);
-        
-        //Initalize new notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        //Set the title of the notification
-        [notification setTitle:[NSString stringWithFormat:@"%@ started working", [onliner objectForKey:@"name"]]];
-        //Set the text of the notification
-        [notification setInformativeText:[NSString stringWithFormat:@"on %@", [[onliner objectForKey:@"activeProject"] objectForKey:@"name"]]];
-        //Set the time and date on which the nofication will be deliverd (for example 20 secons later than the current date and time)
-        [notification setDeliveryDate:[NSDate dateWithTimeInterval:20 sinceDate:[NSDate date]]];
-        //Set the sound, this can be either nil for no sound, NSUserNotificationDefaultSoundName for the default sound (tri-tone) and a string of a .caf file that is in the bundle (filname and extension)
-        //        [notification setSoundName:NSUserNotificationDefaultSoundName];
-        [notification setSoundName:NSUserNotificationDefaultSoundName];
-        
-        //Get the default notification center
-        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
-        //Scheldule our NSUserNotification
-        [center scheduleNotification:notification];
+        [[NotificationManager sharedManager] showUser:[onliner objectForKey:@"name"] isWorkingOn:[onliner objectForKey:@"activeProject"]];
       }
     }
     
@@ -249,6 +240,10 @@ id refToSelf; // reference to self for C function
 {
   self.projects = [NSMutableArray array];
   [self.manager GET:@"me/projects" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    if([responseObject count] == 0) {
+      // No projects
+      [[NotificationManager sharedManager] showStartAddingProjects];
+    }
     
     for(id project in responseObject) {
       [self setupProject:project];
@@ -525,23 +520,7 @@ void projectContentChanged(
 
 - (void)showTakeScreenshotNotification:(NSTimer *)timer
 {
-  NSUserNotification *notification = [[NSUserNotification alloc] init];
-  // private api, delete later
-  
-  //Set the title of the notification
-  notification.title = @"You're making progress!";
-  //Set the text of the notification
-  notification.informativeText = @"Share a screenshot to keep track.";
-  //Set the time and date on which the nofication will be deliverd (for example 20 secons later than the current date and time)
-  notification.deliveryDate = [NSDate dateWithTimeInterval:2 sinceDate:[NSDate date]];
-  //Set the sound, this can be either nil for no sound, NSUserNotificationDefaultSoundName for the default sound (tri-tone) and a string of a .caf file that is in the bundle (filname and extension)
-  //        [notification setSoundName:NSUserNotificationDefaultSoundName];
-  notification.soundName = NSUserNotificationDefaultSoundName;
-  
-  //Get the default notification center
-  NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
-  //Scheldule our NSUserNotification
-  [center scheduleNotification:notification];
+  [[NotificationManager sharedManager] showTakeScreenshot];
   
   [self.screenshotTimer invalidate];
   self.screenshotTimer = nil;

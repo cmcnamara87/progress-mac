@@ -451,6 +451,7 @@ id refToSelf; // reference to self for C function
 
 - (void (^)(AFHTTPRequestOperation *operation, id responseObject))success
 {
+  NSLog(@"Running response block");
   return ^(AFHTTPRequestOperation *operation, id responseObject) {
     NSLog(@"JSON: %@", responseObject);
   };
@@ -458,6 +459,7 @@ id refToSelf; // reference to self for C function
 
 - (void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
 {
+  NSLog(@"Running error block");
   return ^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Failed: %@ %@", operation, error);
   };

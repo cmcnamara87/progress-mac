@@ -30,7 +30,7 @@
   [notification setInformativeText:text];
   notification.userInfo = userInfo;
   //Set the time and date on which the nofication will be deliverd (for example 20 secons later than the current date and time)
-  [notification setDeliveryDate:[NSDate dateWithTimeInterval:10 sinceDate:[NSDate date]]];
+  [notification setDeliveryDate:[NSDate dateWithTimeInterval:1 sinceDate:[NSDate date]]];
   //Set the sound, this can be either nil for no sound, NSUserNotificationDefaultSoundName for the default sound (tri-tone) and a string of a .caf file that is in the bundle (filname and extension)
   //        [notification setSoundName:NSUserNotificationDefaultSoundName];
   [notification setSoundName:NSUserNotificationDefaultSoundName];
@@ -89,5 +89,9 @@
 - (void)showScreenshotUploaded
 {
   [self _showNotificationWithTitle:@"Picture uploaded" text:@"Click to view" userInfo:nil];
+}
+- (void)showProjectCreated:(NSDictionary *)project
+{
+  [self _showNotificationWithTitle:@"Project Created" text:@"Click to view" userInfo:@{@"project": project}];
 }
 @end

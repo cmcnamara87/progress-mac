@@ -51,11 +51,28 @@ id refToSelf; // reference to self for C function
   self.statusItem.highlightMode = YES;
   [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
 
-  
 
   NSURL *baseUrl = [NSURL URLWithString:BASE_API_URL_STRING];
   self.manager = [[AFHTTPRequestOperationManager manager] initWithBaseURL:baseUrl];
-
+  self.manager.requestSerializer = [AFHTTPRequestSerializer serializer];
+  self.manager.responseSerializer = [AFJSONResponseSerializer serializer];
+  
+//    [self.manager GET:@"me/following/online" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+//  [self.manager GET:@"hello" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+//    NSLog(@"Got response %@", responseObject);
+//  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+//    NSLog(@"FAILED response %@ %@", operation, error);
+//  }];
+  
+//  [self.manager POST:@"hello" parameters:@{@"foo": @"bar"} success:^(AFHTTPRequestOperation *operation, id responseObject) {
+//    // Login successful, store credentials
+//    NSLog(@"okay");
+//  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+////    [self logIn:nil];
+//    NSLog(@"bad");
+////    NSLog(@"Error: Couldn't log in with %@, shw login, %@", credentials, error);
+//  }];
+  
   // Hide app window
 //  [self.window orderOut:self];
   
@@ -240,6 +257,7 @@ id refToSelf; // reference to self for C function
 {
   self.projects = [NSMutableArray array];
   [self.manager GET:@"me/projects" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    NSLog(@"Got projects %@", responseObject);
     if([responseObject count] == 0) {
       // No projects
       [[NotificationManager sharedManager] showStartAddingProjects];
@@ -295,7 +313,7 @@ id refToSelf; // reference to self for C function
   NSInteger button = [alert runModal];
   
   if (button == NSAlertThirdButtonReturn) {
-    [self addDirectoriesToProject:project];
+    [self addDirectoriesToProject:project isNew:NO];
   } else if (button == NSAlertDefaultReturn) {
     [self openWebApp:nil];
   }
@@ -304,10 +322,10 @@ id refToSelf; // reference to self for C function
 - (void)showAddDirectoriesToProject:(id)sender
 {
   NSDictionary *project = [sender representedObject];
-  [self addDirectoriesToProject:project];
+  [self addDirectoriesToProject:project isNew:NO];
 }
 
-- (void)addDirectoriesToProject:(NSDictionary *)project
+- (void)addDirectoriesToProject:(NSDictionary *)project isNew:(BOOL)isNew
 {
   NSOpenPanel *panel = [NSOpenPanel openPanel];
   [panel setAllowsMultipleSelection:YES];
@@ -328,6 +346,12 @@ id refToSelf; // reference to self for C function
         NSLog(@"Posting to %@", url);
         [self.manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
           NSLog(@"JSON: %@", responseObject);
+          if(isNew) {
+            // Open the website
+            NSString *urlString = [NSString stringWithFormat:@"http://cmcnamara87.github.io/progress/#/users/%@/diary/%@", [project objectForKey:@"userId"],  [project objectForKey:@"id"]];
+            NSURL *URL = [NSURL URLWithString:urlString];
+            [[NSWorkspace sharedWorkspace] openURL:URL];
+          }
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
           NSLog(@"Error: %@", error);
         }];
@@ -343,7 +367,7 @@ id refToSelf; // reference to self for C function
 - (void)createNewProject:(id)sender
 {
   NSAlert *alert = [NSAlert alertWithMessageText:@"Create a new project"
-                                   defaultButton:@"OK"
+                                   defaultButton:@"Create"
                                  alternateButton:@"Cancel"
                                      otherButton:nil
                        informativeTextWithFormat:@"What's your projects name?"];
@@ -356,11 +380,25 @@ id refToSelf; // reference to self for C function
     [input validateEditing];
     
     NSDictionary *parameters = @{@"name": [input stringValue]};
-
+    
     [self.manager POST:@"me/projects" parameters:parameters success:^(AFHTTPRequestOperation *operation, id project) {
       NSLog(@"JSON: %@", project);
+      
+      [[NotificationManager sharedManager] showProjectCreated:project];
+      
       [self setupProject:project];
-      [self addDirectoriesToProject:project];
+      
+      NSAlert *alert = [NSAlert alertWithMessageText:@"Add folders to watch"
+                                       defaultButton:@"Add folders"
+                                     alternateButton:@"Do it later"
+                                         otherButton:nil
+                           informativeTextWithFormat:@"We will track whenever you save in thse folders and record your progress."];
+      
+      NSInteger button = [alert runModal];
+      if (button == NSAlertDefaultReturn) {
+        [self addDirectoriesToProject:project isNew:YES];
+      }
+
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
       NSLog(@"Error: %@", error);
     }];
@@ -376,6 +414,7 @@ id refToSelf; // reference to self for C function
 
 - (void)madeProgress
 {
+    NSLog(@"Called madeProgress");
   if(!self.hasProgress) {
     [self sendProgress];
     self.hasProgress = YES;
@@ -387,6 +426,7 @@ id refToSelf; // reference to self for C function
   if(!self.screenshotTimer) {
     self.screenshotTimer = [NSTimer scheduledTimerWithTimeInterval:(30*60) target:self selector:@selector(showTakeScreenshotNotification:) userInfo:nil repeats:YES];
   }
+      NSLog(@"Finished madeProgress");
 }
 - (void)timeToSendProgress:(NSTimer *)progressTimer
 {
@@ -401,7 +441,12 @@ id refToSelf; // reference to self for C function
   NSDictionary *parameters = @{@"foo": @"bar"};
   NSString *url = [NSString stringWithFormat:@"me/projects/%@/progress", [self.activeProject objectForKey:@"id"]];
   NSLog(@"url %@", url);
-  [[refToSelf manager] POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+  
+  NSLog(@"Replaced REF to self with self.mangaer - self %@", self);
+  NSLog(@"Replaced REF to self with self.mangaer - manager %@", self.manager);
+  
+  //NSLog(@"AFNetwork posting disabled");
+  [self.manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
     NSLog(@"JSON: %@", responseObject);
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: %@", error);
@@ -479,10 +524,16 @@ void projectContentChanged(
   }
   NSLog(@"-- UPLOADING!");
   
+  NSLog(@"Ref to self is %@", refToSelf);
+  
   // Get out the goal that had the file changed event
   NSMutableDictionary *project = (__bridge NSMutableDictionary *)(clientCallBackInfo);
+  
+  NSLog(@"Got active project %@", project);
   [refToSelf setUserIsActiveInProject:project];
+
   [refToSelf madeProgress];
+
 
   // Invalid existing timer
 
@@ -528,6 +579,7 @@ void projectContentChanged(
 
 - (void)setUserIsActiveInProject:(NSDictionary *)project
 {
+    NSLog(@"in setUserIsActiveInProject");
   self.activeProject = project;
   // Setting active project
   if(self.workingTimer) {
@@ -536,8 +588,9 @@ void projectContentChanged(
     [[ScreenshotManager sharedManager] startWatching];
 //    [self watchForScreenshots];
   }
-  self.workingTimer = [NSTimer scheduledTimerWithTimeInterval:(15*60) target:refToSelf selector:@selector(disableWorkingIcon:) userInfo:nil repeats:NO];
+  self.workingTimer = [NSTimer scheduledTimerWithTimeInterval:(15*60) target:self selector:@selector(disableWorkingIcon:) userInfo:nil repeats:NO];
   [self.statusItem setImage:[NSImage imageNamed:@"icon-in-18x18.png"]];
+      NSLog(@"Finished setUserIsActiveInProject");
 }
 
 - (void)setUserIsInactive

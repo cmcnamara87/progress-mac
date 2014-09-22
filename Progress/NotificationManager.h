@@ -19,4 +19,5 @@
 - (void)showNowTracking:(NSArray *)projects;
 - (void)showUploadingScreenshot;
 - (void)showScreenshotUploaded;
+- (void)showProjectCreated:(NSDictionary *)project;
 @end

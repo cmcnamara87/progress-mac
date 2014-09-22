@@ -57,9 +57,9 @@
 
 - (void)foundScreenshots:(NSNotification *)sender
 {
-  NSLog(@"Found screensht!");
     // Stop the search while we handle this
   [self.metadataSearch disableUpdates];
+  
   
   
   if ([[sender name] isEqualToString:NSMetadataQueryDidFinishGatheringNotification]) {

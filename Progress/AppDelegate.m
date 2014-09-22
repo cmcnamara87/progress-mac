@@ -446,11 +446,21 @@ id refToSelf; // reference to self for C function
   NSLog(@"Replaced REF to self with self.mangaer - manager %@", self.manager);
   
   //NSLog(@"AFNetwork posting disabled");
-  [self.manager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+  [self.manager POST:url parameters:parameters success:[self success] failure:[self failure]];
+}
+
+- (void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+{
+  return ^(AFHTTPRequestOperation *operation, id responseObject) {
     NSLog(@"JSON: %@", responseObject);
-  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-    NSLog(@"Error: %@", error);
-  }];
+  };
+}
+
+- (void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+  return ^(AFHTTPRequestOperation *operation, NSError *error) {
+    NSLog(@"Failed: %@ %@", operation, error);
+  };
 }
 
 - (void)openWebApp:(id)sender

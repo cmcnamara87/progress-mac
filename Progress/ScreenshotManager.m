@@ -60,7 +60,10 @@
     // Stop the search while we handle this
   [self.metadataSearch disableUpdates];
   
-  
+      if(![self.metadataSearch resultCount]) {
+        [self.metadataSearch enableUpdates];
+        return;
+    }
   
   if ([[sender name] isEqualToString:NSMetadataQueryDidFinishGatheringNotification]) {
     NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
@@ -74,7 +77,7 @@
   for (i=0; i < [self.metadataSearch resultCount]; i++) {
     NSMetadataItem *screenshot = [self.metadataSearch resultAtIndex:i];
     NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
-    if ([creationDate compare:self.newestScreenshotCreationDate] == NSOrderedDescending) {
+    if (!self.newestScreenshotCreationDate || [creationDate compare:self.newestScreenshotCreationDate] == NSOrderedDescending) {
       [self uploadScreenshot:screenshot];
       self.newestScreenshotCreationDate = creationDate;
     }

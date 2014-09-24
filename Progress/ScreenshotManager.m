@@ -57,10 +57,12 @@
 
 - (void)foundScreenshots:(NSNotification *)sender
 {
+  NSLog(@"Finished finding screenshots %lu", (unsigned long)[self.metadataSearch resultCount]);
     // Stop the search while we handle this
   [self.metadataSearch disableUpdates];
   
       if(![self.metadataSearch resultCount]) {
+        NSLog(@"No screenshots found %lu", (unsigned long)[self.metadataSearch resultCount]);
         [self.metadataSearch enableUpdates];
         return;
     }
@@ -69,18 +71,26 @@
     NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
     self.newestScreenshotCreationDate = [newestScreenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
     [self.metadataSearch enableUpdates];
+    NSLog(@"Updating reference screenshot, date %@", self.newestScreenshotCreationDate);
     return;
   }
   
 
   NSUInteger i=0;
+  BOOL hasNewScreenshot = false;
+  NSMetadataItem *screenshot;
   for (i=0; i < [self.metadataSearch resultCount]; i++) {
-    NSMetadataItem *screenshot = [self.metadataSearch resultAtIndex:i];
+    screenshot = [self.metadataSearch resultAtIndex:i];
     NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
     if (!self.newestScreenshotCreationDate || [creationDate compare:self.newestScreenshotCreationDate] == NSOrderedDescending) {
+      NSLog(@"New screenshot found, uploading screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
+      hasNewScreenshot = true;
       [self uploadScreenshot:screenshot];
-      self.newestScreenshotCreationDate = creationDate;
     }
+  }
+  
+  if(!hasNewScreenshot) {
+    NSLog(@"No new screenshot found, last screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
   }
   /*
    NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
@@ -99,9 +109,10 @@
 
 - (void)uploadScreenshot:(NSMetadataItem *)screenshot
 {
+
+
   NSString *path = [screenshot valueForAttribute:(NSString *)kMDItemPath];
-  NSString *fileName = [screenshot valueForAttribute:(NSString *)kMDItemFSName];
-  
+  NSLog(@"Showing screenshot modal %@", path);
   AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
   NSAlert *alert = [NSAlert alertWithMessageText:@"Progress"
                                    defaultButton:@"Upload"
@@ -118,12 +129,19 @@
   NSInteger button = [alert runModal];
   
   if (button == NSAlertDefaultReturn) {
-    [self uploadFilePath:path fileName:fileName forProject:appDelegate.activeProject text:[input stringValue]];
+    [self uploadScreenshot:screenshot forProject:appDelegate.activeProject text:[input stringValue]];
+  } else {
+    NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
+    self.newestScreenshotCreationDate = creationDate;
   }
 }
 
-- (void)uploadFilePath:(NSString *)path fileName:(NSString *)fileName forProject:(NSDictionary *)project text:(NSString *)text
+- (void)uploadScreenshot:(NSMetadataItem *)screenshot forProject:(NSDictionary *)project text:(NSString *)text
 {
+  NSString *fileName = [screenshot valueForAttribute:(NSString *)kMDItemFSName];
+  NSString *path = [screenshot valueForAttribute:(NSString *)kMDItemPath];
+  NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
+  
   [[NotificationManager sharedManager] showUploadingScreenshot];
   
   //  NSString* apiUrl = @"http://example.com/upload";
@@ -172,7 +190,8 @@
                                                                                                 if (error) {
                                                                                                   NSLog(@"Error: %@", error);
                                                                                                 } else {
-                                                                                                  NSLog(@"Success: %@", responseObject);
+                                                                                                  self.newestScreenshotCreationDate = creationDate;
+                                                                                                  NSLog(@"Success, Creation date updated: %@", responseObject);
                                                                                                 }
                                                                                               }];
                                                         

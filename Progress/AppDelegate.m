@@ -414,7 +414,7 @@ id refToSelf; // reference to self for C function
 
 - (void)madeProgress
 {
-    NSLog(@"Called madeProgress");
+//    NSLog(@"Called madeProgress");
   if(!self.hasProgress) {
     [self sendProgress];
     self.hasProgress = YES;
@@ -426,7 +426,7 @@ id refToSelf; // reference to self for C function
   if(!self.screenshotTimer) {
     self.screenshotTimer = [NSTimer scheduledTimerWithTimeInterval:(30*60) target:self selector:@selector(showTakeScreenshotNotification:) userInfo:nil repeats:YES];
   }
-      NSLog(@"Finished madeProgress");
+  NSLog(@"Finished madeProgress");
 }
 - (void)timeToSendProgress:(NSTimer *)progressTimer
 {
@@ -440,18 +440,12 @@ id refToSelf; // reference to self for C function
   // Add progress to each project
   NSDictionary *parameters = @{@"foo": @"bar"};
   NSString *url = [NSString stringWithFormat:@"me/projects/%@/progress", [self.activeProject objectForKey:@"id"]];
-  NSLog(@"url %@", url);
   
-  NSLog(@"Replaced REF to self with self.mangaer - self %@", self);
-  NSLog(@"Replaced REF to self with self.mangaer - manager %@", self.manager);
-  
-  //NSLog(@"AFNetwork posting disabled");
   [self.manager POST:url parameters:parameters success:[self success] failure:[self failure]];
 }
 
 - (void (^)(AFHTTPRequestOperation *operation, id responseObject))success
 {
-  NSLog(@"Running response block");
   return ^(AFHTTPRequestOperation *operation, id responseObject) {
     NSLog(@"JSON: %@", responseObject);
   };
@@ -459,7 +453,6 @@ id refToSelf; // reference to self for C function
 
 - (void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
 {
-  NSLog(@"Running error block");
   return ^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Failed: %@ %@", operation, error);
   };
@@ -534,14 +527,14 @@ void projectContentChanged(
   if(numInvalidEvents == numEvents) {
     return;
   }
-  NSLog(@"-- UPLOADING!");
+//  NSLog(@"-- UPLOADING!");
   
-  NSLog(@"Ref to self is %@", refToSelf);
+//  NSLog(@"Ref to self is %@", refToSelf);
   
   // Get out the goal that had the file changed event
   NSMutableDictionary *project = (__bridge NSMutableDictionary *)(clientCallBackInfo);
   
-  NSLog(@"Got active project %@", project);
+//  NSLog(@"Got active project %@", project);
   [refToSelf setUserIsActiveInProject:project];
 
   [refToSelf madeProgress];

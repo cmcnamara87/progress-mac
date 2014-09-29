@@ -53,7 +53,9 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: Couldn't log in with %@", email);
     NSLog(@"Error: %@", error);
-    failure(operation, error);
+    if(failure) {
+      failure(operation, error);
+    }
   }];
 }
 
@@ -65,7 +67,9 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: Couldn't get online users");
     NSLog(@"Error: %@", error);
-    failure(operation, error);
+    if(failure) {
+      failure(operation, error);
+    }
   }];
 }
 
@@ -86,6 +90,9 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
     success(responseObject);
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: Couldn't get projects %@", error);
+    if(failure) {
+      failure(operation, error);
+    }
   }];
 }
 
@@ -102,7 +109,9 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
     success(project);
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: Couldn't add directory %@ to project Id %@, %@", path, [project objectForKey:@"id"], error);
-    failure(operation, error);
+    if(failure) {
+      failure(operation, error);
+    }
   }];
 }
 
@@ -115,6 +124,9 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
     success(project);
   } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
     NSLog(@"Error: Couldn't create project, %@", error);
+    if(failure) {
+      failure(operation, error);
+    }
   }];
 }
 
@@ -138,13 +150,12 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
 
 - (void)sendProgressNowTimer:(NSTimer *)progressTimer
 {
+  NSDictionary *project = [[progressTimer userInfo] objectForKey:@"project"];
+  [self sendProgressNowForProject:project];
+  
   [self.progressRateLimitTimer invalidate];
   self.progressRateLimitTimer = nil;
   self.isProgressRateLimited = NO;
-  
-  NSLog(@"Debug: Sending progress.");
-  NSDictionary *project = [[progressTimer userInfo] objectForKey:@"project"];
-  [self sendProgressNowForProject:project];
 }
 
 - (void)sendProgressNowForProject:(NSDictionary *)project

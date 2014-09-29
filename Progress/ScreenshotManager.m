@@ -83,6 +83,8 @@
 {
   [self.metadataSearch disableUpdates];
   self.metadataSearch = nil;
+  [self.screenshotTimer invalidate];
+  self.screenshotTimer = nil;
 }
 
 - (void)foundScreenshots:(NSNotification *)sender

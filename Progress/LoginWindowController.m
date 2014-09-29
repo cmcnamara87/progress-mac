@@ -8,6 +8,7 @@
 
 #import "LoginWindowController.h"
 #import "AppDelegate.h"
+#import "ApiManager.h"
 
 @interface LoginWindowController ()
 
@@ -21,7 +22,7 @@
 
 - (id)init
 {
-  NSLog(@"initing");
+  NSLog(@"Debug: Showing login window");
   return [self initWithWindowNibName:@"LoginWindowController" owner:self];
 }
 
@@ -36,8 +37,8 @@
 
 - (void)windowDidLoad
 {
-    [super windowDidLoad];
-    
+  [super windowDidLoad];
+  
     // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
 }
 
@@ -57,17 +58,15 @@
 {
   AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
 
-  NSDictionary *parameters = @{@"email": self.emailTextField.stringValue, @"password": self.passwordTextField.stringValue};
-  [appDelegate.manager POST:@"users/login" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
-    
-    // Login successful, store credentials
-    [self storeCredentials];
-    [self close];
-    [appDelegate loggedIn:responseObject];
-    
-  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-    NSLog(@"Error: %@", error);
-  }];
+  [[ApiManager sharedManager] loginEmail:self.emailTextField.stringValue
+                                password:self.passwordTextField.stringValue
+                                 success:^(NSDictionary *currentUser) {
+                                   [self storeCredentials];
+                                   [self close];
+                                   [appDelegate loggedIn:currentUser];
+                                 } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+                                   
+                                 }];
 }
 
 - (NSURLCredential *)storeCredentials

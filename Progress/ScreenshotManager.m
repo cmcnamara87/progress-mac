@@ -8,27 +8,57 @@
 
 #import "ScreenshotManager.h"
 #import "AppDelegate.h"
-#import "NotificationManager.h"
+
 @interface ScreenshotManager ()
 @property (nonatomic, strong) NSMetadataQuery *metadataSearch;
 @property (nonatomic, strong) NSDate *newestScreenshotCreationDate;
+@property (strong, nonatomic) NSTimer *screenshotTimer;
+@property (strong, nonatomic) NSDictionary *activeProject;
+
+@property (strong, nonatomic) NotificationManager *notificationManager;
 @end
 
 @implementation ScreenshotManager
 
-
-+ (id)sharedManager {
-  static ScreenshotManager *sharedMyManager = nil;
-  @synchronized(self) {
-    if (sharedMyManager == nil)
-      sharedMyManager = [[self alloc] init];
+- initWithNotificationManager:(NotificationManager *)notificationManager
+{
+  if (self = [super init]) {
+    self.notificationManager = notificationManager;
   }
-  return sharedMyManager;
+  return self;
 }
 
 
-- (void)startWatching
+- (void)startScreenshotNotificationTimer
 {
+  [self.screenshotTimer invalidate];
+  self.screenshotTimer = [NSTimer scheduledTimerWithTimeInterval:(30*60)
+                                                          target:self
+                                                        selector:@selector(showTakeScreenshotNotification:)
+                                                        userInfo:nil
+                                                         repeats:YES];
+}
+
+- (void)showTakeScreenshotNotification:(NSTimer *)timer
+{
+  [[NotificationManager sharedManager] showTakeScreenshot];
+  
+  [self.screenshotTimer invalidate];
+  self.screenshotTimer = nil;
+}
+
+
+
+- (void)startWatchingForProject:(NSDictionary *)project
+{
+  self.activeProject = project;
+  [self startScreenshotNotificationTimer];
+  
+  if(self.metadataSearch) {
+    return;
+  }
+  
+  
   self.metadataSearch = [[NSMetadataQuery alloc] init];
   
   // Register the notifications for batch and completion updates
@@ -100,16 +130,16 @@
 
 - (void)uploadScreenshot:(NSMetadataItem *)screenshot
 {
-  
+  [self startScreenshotNotificationTimer];
   
   NSString *path = [screenshot valueForAttribute:(NSString *)kMDItemPath];
   NSLog(@"Showing screenshot modal %@", path);
-  AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
+
   NSAlert *alert = [NSAlert alertWithMessageText:@"Progress"
                                    defaultButton:@"Upload"
                                  alternateButton:@"Cancel"
                                      otherButton:nil
-                       informativeTextWithFormat:@"Upload your screenshot for '%@'?", [appDelegate.activeProject objectForKey:@"name"]];
+                       informativeTextWithFormat:@"Upload your screenshot for '%@'?", [self.activeProject objectForKey:@"name"]];
   [alert setIcon:[[NSImage alloc] initWithContentsOfFile:path]];
   NSTextField *input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 200, 24)];
   [[input cell] setPlaceholderString:@"What's this about?"];
@@ -125,7 +155,7 @@
   [self.metadataSearch enableUpdates];
   
   if (button == NSAlertDefaultReturn) {
-    [self uploadScreenshot:screenshot forProject:appDelegate.activeProject text:[input stringValue]];
+    [self uploadScreenshot:screenshot forProject:self.activeProject text:[input stringValue]];
   }
 }
 

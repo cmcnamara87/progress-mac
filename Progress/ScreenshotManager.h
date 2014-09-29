@@ -7,11 +7,12 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "NotificationManager.h"
 
 @interface ScreenshotManager : NSObject
 
-+ (id)sharedManager;
+- initWithNotificationManager:(NotificationManager *)notificationManager;
 
-- (void)startWatching;
+- (void)startWatchingForProject:(NSDictionary *)project;
 - (void)stopWatching;
 @end

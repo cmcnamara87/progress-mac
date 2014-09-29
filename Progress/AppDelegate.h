@@ -18,10 +18,10 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
 @property (strong, nonatomic) NSStatusItem *statusItem;
 @property (strong, nonatomic) NSMutableArray *projects;
 @property (strong, nonatomic) NSMenu *menu;
-@property (strong, nonatomic) AFHTTPRequestOperationManager *manager;
+//@property (strong, nonatomic) AFHTTPRequestOperationManager *manager;
 @property (strong, nonatomic) NSURLProtectionSpace *loginProtectionSpace;
 @property (nonatomic, strong) NSMetadataQuery *metadataSearch;
-@property (strong, nonatomic) NSDictionary *activeProject;
+//@property (strong, nonatomic) NSDictionary *activeProject;
 
 - (void)openWebApp:(id)sender;
 - (void)loggedIn:(NSDictionary *)user;

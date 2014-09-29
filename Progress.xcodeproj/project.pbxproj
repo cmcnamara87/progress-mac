@@ -13,6 +13,8 @@
 		4E2C3E83196955E700273C25 /* icon-in-18x18.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E2C3E81196955E700273C25 /* icon-in-18x18.png */; };
 		4E2C3E8519695A5200273C25 /* icon-18x18.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E2C3E8419695A5200273C25 /* icon-18x18.png */; };
 		4E8C38D119A9A3DA00301B63 /* ScreenshotManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E8C38D019A9A3DA00301B63 /* ScreenshotManager.m */; };
+		4EA7274119D917090001985E /* ProgressManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EA7274019D917090001985E /* ProgressManager.m */; };
+		4EA7274419D919250001985E /* ApiManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EA7274319D919250001985E /* ApiManager.m */; };
 		4EBA1CDA1955A86B00AF60E1 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EBA1CD91955A86B00AF60E1 /* Cocoa.framework */; };
 		4EBA1CE41955A86B00AF60E1 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4EBA1CE21955A86B00AF60E1 /* InfoPlist.strings */; };
 		4EBA1CE61955A86B00AF60E1 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EBA1CE51955A86B00AF60E1 /* main.m */; };
@@ -50,6 +52,10 @@
 		4E2C3E8419695A5200273C25 /* icon-18x18.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-18x18.png"; sourceTree = "<group>"; };
 		4E8C38CF19A9A3DA00301B63 /* ScreenshotManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScreenshotManager.h; sourceTree = "<group>"; };
 		4E8C38D019A9A3DA00301B63 /* ScreenshotManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScreenshotManager.m; sourceTree = "<group>"; };
+		4EA7273F19D917090001985E /* ProgressManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProgressManager.h; sourceTree = "<group>"; };
+		4EA7274019D917090001985E /* ProgressManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ProgressManager.m; sourceTree = "<group>"; };
+		4EA7274219D919250001985E /* ApiManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApiManager.h; sourceTree = "<group>"; };
+		4EA7274319D919250001985E /* ApiManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApiManager.m; sourceTree = "<group>"; };
 		4EBA1CD61955A86B00AF60E1 /* Progress.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Progress.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EBA1CD91955A86B00AF60E1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		4EBA1CDC1955A86B00AF60E1 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -142,8 +148,14 @@
 		4EBA1CDF1955A86B00AF60E1 /* Progress */ = {
 			isa = PBXGroup;
 			children = (
+				4EBA1CEB1955A86B00AF60E1 /* AppDelegate.h */,
+				4EBA1CEC1955A86B00AF60E1 /* AppDelegate.m */,
 				4E8C38CF19A9A3DA00301B63 /* ScreenshotManager.h */,
 				4E8C38D019A9A3DA00301B63 /* ScreenshotManager.m */,
+				4EA7274219D919250001985E /* ApiManager.h */,
+				4EA7274319D919250001985E /* ApiManager.m */,
+				4EA7273F19D917090001985E /* ProgressManager.h */,
+				4EA7274019D917090001985E /* ProgressManager.m */,
 				4E1E59EC19BEC762003F91FF /* NotificationManager.h */,
 				4E1E59ED19BEC762003F91FF /* NotificationManager.m */,
 				4EF337181956EDE8006AE58F /* LoginWindowController.h */,
@@ -154,8 +166,6 @@
 				4E2C3E7C1967845500273C25 /* 3.png */,
 				4E2C3E8419695A5200273C25 /* icon-18x18.png */,
 				4E2C3E81196955E700273C25 /* icon-in-18x18.png */,
-				4EBA1CEB1955A86B00AF60E1 /* AppDelegate.h */,
-				4EBA1CEC1955A86B00AF60E1 /* AppDelegate.m */,
 				4EBA1CEE1955A86B00AF60E1 /* MainMenu.xib */,
 				4EBA1CF11955A86B00AF60E1 /* Images.xcassets */,
 				4EBA1CE01955A86B00AF60E1 /* Supporting Files */,
@@ -332,6 +342,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4EA7274419D919250001985E /* ApiManager.m in Sources */,
+				4EA7274119D917090001985E /* ProgressManager.m in Sources */,
 				4EF3371B1956EDE8006AE58F /* LoginWindowController.m in Sources */,
 				4EBA1CED1955A86B00AF60E1 /* AppDelegate.m in Sources */,
 				4EBA1CE61955A86B00AF60E1 /* main.m in Sources */,

@@ -46,8 +46,9 @@ id refToSelf; // reference to self for C function
 //  [NSTimer scheduledTimerWithTimeInterval:ti target:self selector:@selector(getUnreadEntries:) userInfo:nil repeats:YES];
   
   NSStatusBar *statusBar = [NSStatusBar systemStatusBar];
-  self.statusItem.title = @"";
+  
   self.statusItem = [statusBar statusItemWithLength:NSVariableStatusItemLength];
+  self.statusItem.title = @"";
   self.statusItem.highlightMode = YES;
   [self.statusItem setImage:[NSImage imageNamed:@"icon-18x18.png"]];
 

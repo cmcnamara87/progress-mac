@@ -10,8 +10,8 @@
 #import "AppDelegate.h"
 #import "NotificationManager.h"
 @interface ScreenshotManager ()
-  @property (nonatomic, strong) NSMetadataQuery *metadataSearch;
-  @property (nonatomic, strong) NSDate *newestScreenshotCreationDate;
+@property (nonatomic, strong) NSMetadataQuery *metadataSearch;
+@property (nonatomic, strong) NSDate *newestScreenshotCreationDate;
 @end
 
 @implementation ScreenshotManager
@@ -29,7 +29,7 @@
 
 - (void)startWatching
 {
-    self.metadataSearch = [[NSMetadataQuery alloc] init];
+  self.metadataSearch = [[NSMetadataQuery alloc] init];
   
   // Register the notifications for batch and completion updates
   [[NSNotificationCenter defaultCenter] addObserver:self
@@ -58,14 +58,14 @@
 - (void)foundScreenshots:(NSNotification *)sender
 {
   NSLog(@"Finished finding screenshots %lu", (unsigned long)[self.metadataSearch resultCount]);
-    // Stop the search while we handle this
+  // Stop the search while we handle this
   [self.metadataSearch disableUpdates];
   
-      if(![self.metadataSearch resultCount]) {
-        NSLog(@"No screenshots found %lu", (unsigned long)[self.metadataSearch resultCount]);
-        [self.metadataSearch enableUpdates];
-        return;
-    }
+  if(![self.metadataSearch resultCount]) {
+    NSLog(@"No screenshots found %lu", (unsigned long)[self.metadataSearch resultCount]);
+    [self.metadataSearch enableUpdates];
+    return;
+  }
   
   if ([[sender name] isEqualToString:NSMetadataQueryDidFinishGatheringNotification]) {
     NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
@@ -75,7 +75,7 @@
     return;
   }
   
-
+  
   NSUInteger i=0;
   BOOL hasNewScreenshot = false;
   NSMetadataItem *screenshot;
@@ -83,34 +83,25 @@
     screenshot = [self.metadataSearch resultAtIndex:i];
     NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
     if (!self.newestScreenshotCreationDate || [creationDate compare:self.newestScreenshotCreationDate] == NSOrderedDescending) {
+      
       NSLog(@"New screenshot found, uploading screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
+      
       hasNewScreenshot = true;
       [self uploadScreenshot:screenshot];
+      break;
     }
   }
   
   if(!hasNewScreenshot) {
     NSLog(@"No new screenshot found, last screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
+    [self.metadataSearch enableUpdates];
   }
-  /*
-   NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
-   //    NSString *path = [newestScreenshot valueForAttribute:(NSString *)kMDItemPath];
-   //
-   NSDate *creationDate = [newestScreenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];  NSLog(@"finished gathereing! %@", creationDate);
-   */
-  
-
-  
-  // Popup alert
-
-  
-  [self.metadataSearch enableUpdates];
 }
 
 - (void)uploadScreenshot:(NSMetadataItem *)screenshot
 {
-
-
+  
+  
   NSString *path = [screenshot valueForAttribute:(NSString *)kMDItemPath];
   NSLog(@"Showing screenshot modal %@", path);
   AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
@@ -128,11 +119,13 @@
   
   NSInteger button = [alert runModal];
   
+  // Mark this screenshot as done!
+  NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
+  self.newestScreenshotCreationDate = creationDate;
+  [self.metadataSearch enableUpdates];
+  
   if (button == NSAlertDefaultReturn) {
     [self uploadScreenshot:screenshot forProject:appDelegate.activeProject text:[input stringValue]];
-  } else {
-    NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
-    self.newestScreenshotCreationDate = creationDate;
   }
 }
 
@@ -216,7 +209,7 @@
   
   //  AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
   //  NSProgress *progress = nil;
-  //  
+  //
   //  NSURLSessionUploadTask *uploadTask = [manager uploadTaskWithStreamedRequest:request progress:&progress completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
   //    if (error) {
   //      NSLog(@"Error: %@", error);

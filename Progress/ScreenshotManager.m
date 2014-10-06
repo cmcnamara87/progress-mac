@@ -24,10 +24,48 @@
 {
   if (self = [super init]) {
     self.notificationManager = notificationManager;
+    
+    self.metadataSearch = [[NSMetadataQuery alloc] init];
+    
+    // Register the notifications for batch and completion updates
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(foundScreenshots:)
+                                                 name:NSMetadataQueryDidUpdateNotification
+                                               object:_metadataSearch];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(foundScreenshots:)
+                                                 name:NSMetadataQueryDidFinishGatheringNotification
+                                               object:_metadataSearch];
+    
+    [self.metadataSearch setPredicate:[NSPredicate predicateWithFormat:@"kMDItemIsScreenCapture = 1"]];
+    NSSortDescriptor *sortKeys = [[NSSortDescriptor alloc] initWithKey:(id)kMDItemFSCreationDate
+                                                             ascending:YES];
+    [self.metadataSearch setSortDescriptors:[NSArray arrayWithObject:sortKeys]];
+    [self.metadataSearch stopQuery];
+    
   }
   return self;
 }
 
+- (void)startWatchingForProject:(NSDictionary *)project
+{
+  if([self.activeProject objectForKey:@"id"] == [project objectForKey:@"id"]) {
+    return;
+  }
+  
+  self.activeProject = project;
+  [self startScreenshotNotificationTimer];
+  [self.metadataSearch startQuery];
+}
+
+- (void)stopWatching
+{
+  [self.metadataSearch stopQuery];
+  [self.screenshotTimer invalidate];
+  self.screenshotTimer = nil;
+  self.activeProject = nil;
+}
 
 - (void)startScreenshotNotificationTimer
 {
@@ -43,58 +81,25 @@
 {
   [[NotificationManager sharedManager] showTakeScreenshot];
   
+  // Lower the timer to 15 mins (if they take a screenshot, we will up it to 30 again)
   [self.screenshotTimer invalidate];
-  self.screenshotTimer = nil;
+  self.screenshotTimer = [NSTimer scheduledTimerWithTimeInterval:(15*60)
+                                                          target:self
+                                                        selector:@selector(showTakeScreenshotNotification:)
+                                                        userInfo:nil
+                                                         repeats:YES];
+
 }
 
-
-
-- (void)startWatchingForProject:(NSDictionary *)project
-{
-  self.activeProject = project;
-  [self startScreenshotNotificationTimer];
-  
-  if(self.metadataSearch) {
-    return;
-  }
-  
-  
-  self.metadataSearch = [[NSMetadataQuery alloc] init];
-  
-  // Register the notifications for batch and completion updates
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(foundScreenshots:)
-                                               name:NSMetadataQueryDidUpdateNotification
-                                             object:_metadataSearch];
-  
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(foundScreenshots:)
-                                               name:NSMetadataQueryDidFinishGatheringNotification
-                                             object:_metadataSearch];
-  
-  [self.metadataSearch setPredicate:[NSPredicate predicateWithFormat:@"kMDItemIsScreenCapture = 1"]];
-  NSSortDescriptor *sortKeys = [[NSSortDescriptor alloc] initWithKey:(id)kMDItemFSCreationDate
-                                                           ascending:YES];
-  [self.metadataSearch setSortDescriptors:[NSArray arrayWithObject:sortKeys]];
-  [self.metadataSearch startQuery];
-}
-
-- (void)stopWatching
-{
-  [self.metadataSearch disableUpdates];
-  self.metadataSearch = nil;
-  [self.screenshotTimer invalidate];
-  self.screenshotTimer = nil;
-}
 
 - (void)foundScreenshots:(NSNotification *)sender
 {
-  NSLog(@"Finished finding screenshots %lu", (unsigned long)[self.metadataSearch resultCount]);
+  NSLog(@"Debug: Finished finding screenshots %lu", (unsigned long)[self.metadataSearch resultCount]);
   // Stop the search while we handle this
   [self.metadataSearch disableUpdates];
   
   if(![self.metadataSearch resultCount]) {
-    NSLog(@"No screenshots found %lu", (unsigned long)[self.metadataSearch resultCount]);
+    NSLog(@"Debug: No screenshots found %lu", (unsigned long)[self.metadataSearch resultCount]);
     [self.metadataSearch enableUpdates];
     return;
   }
@@ -103,7 +108,7 @@
     NSMetadataItem *newestScreenshot = [self.metadataSearch resultAtIndex:([self.metadataSearch resultCount] - 1)];
     self.newestScreenshotCreationDate = [newestScreenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
     [self.metadataSearch enableUpdates];
-    NSLog(@"Updating reference screenshot, date %@", self.newestScreenshotCreationDate);
+    NSLog(@"Debug: Updating reference screenshot, date %@", self.newestScreenshotCreationDate);
     return;
   }
   
@@ -116,7 +121,7 @@
     NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
     if (!self.newestScreenshotCreationDate || [creationDate compare:self.newestScreenshotCreationDate] == NSOrderedDescending) {
       
-      NSLog(@"New screenshot found, uploading screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
+      NSLog(@"Debug: New screenshot found, uploading screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
       
       hasNewScreenshot = true;
       [self uploadScreenshot:screenshot];
@@ -125,7 +130,7 @@
   }
   
   if(!hasNewScreenshot) {
-    NSLog(@"No new screenshot found, last screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
+    NSLog(@"Debug: No new screenshot found, last screenshot path %@, date %@", [screenshot valueForAttribute:(NSString *)kMDItemPath], [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate]);
     [self.metadataSearch enableUpdates];
   }
 }

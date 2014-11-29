@@ -277,12 +277,13 @@ id refToSelf; // reference to self for C function
         [paths addObject:[url path]];
         
         [self.apiManager addDirectoryPath:[url path] toProject:project success:^(NSDictionary *project) {
-          if(isNew) {
-            // Open the website
-            NSString *urlString = [NSString stringWithFormat:@"%@#/users/%@/projects/%@", kBaseUrl, [project objectForKey:@"userId"],  [project objectForKey:@"id"]];
-            NSURL *URL = [NSURL URLWithString:urlString];
-            [[NSWorkspace sharedWorkspace] openURL:URL];
-          }
+//          if(isNew) {
+//            NSString *url = [NSString stringWithFormat:@"%@#/users/%@/projects/%@", kBaseUrl, [project objectForKey:@"userId"],  [project objectForKey:@"id"]];
+//            NSLog(@"url is %@", url);
+//            // Open the website
+//            NSURL *URL = [NSURL URLWithString:url];
+//            [[NSWorkspace sharedWorkspace] openURL:URL];
+//          }
         } failure:nil];
       }
       
@@ -316,6 +317,12 @@ id refToSelf; // reference to self for C function
   
   [self.apiManager addProjectName:[input stringValue] success:^(NSDictionary *project) {
     [[NotificationManager sharedManager] showProjectCreated:project];
+  
+    NSString *url = [NSString stringWithFormat:@"%@#/users/%@/projects/%@", kBaseUrl, [project objectForKey:@"user_id"],  [project objectForKey:@"id"]];
+    NSLog(@"url is %@", url);
+    // Open the website
+    NSURL *URL = [NSURL URLWithString:url];
+    [[NSWorkspace sharedWorkspace] openURL:URL];
     
     [weakSelf setupProject:project];
     

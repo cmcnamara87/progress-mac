@@ -61,7 +61,7 @@
   [[ApiManager sharedManager] loginEmail:self.emailTextField.stringValue
                                 password:self.passwordTextField.stringValue
                                  success:^(NSDictionary *currentUser) {
-                                   [self storeCredentials];
+//                                   [self storeCredentials];
                                    [self close];
                                    [appDelegate loggedIn:currentUser];
                                  } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
@@ -72,8 +72,18 @@
 - (NSURLCredential *)storeCredentials
 {
   AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
-  NSURLCredential *credential;
-  credential = [NSURLCredential credentialWithUser:self.emailTextField.stringValue password:self.passwordTextField.stringValue persistence:NSURLCredentialPersistencePermanent];
+  
+  // Delete current credentials
+  // TODO: Do you even need to do this?
+//  NSDictionary *credentials = [[NSURLCredentialStorage sharedCredentialStorage] credentialsForProtectionSpace:appDelegate.loginProtectionSpace];
+//  NSURLCredential *credential = [credentials.objectEnumerator nextObject];
+//  if(credentials) {
+//    [[NSURLCredentialStorage sharedCredentialStorage] removeCredential:credential forProtectionSpace:appDelegate.loginProtectionSpace];
+//  }
+
+  
+//  NSURLCredential *credential;
+  NSURLCredential *credential = [NSURLCredential credentialWithUser:self.emailTextField.stringValue password:self.passwordTextField.stringValue persistence:NSURLCredentialPersistencePermanent];
   [[NSURLCredentialStorage sharedCredentialStorage] setCredential:credential forProtectionSpace:appDelegate.loginProtectionSpace];
   return credential;
 }

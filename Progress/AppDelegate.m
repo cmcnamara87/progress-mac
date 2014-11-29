@@ -67,33 +67,36 @@ id refToSelf; // reference to self for C function
   //  [self.window orderOut:self];
   
   [self setupDefaultMenu];
-  
+
+  [self.apiManager getCurrentUserSuccess:^(NSDictionary *user) {
+    [self loggedIn:user];
+  } failure:nil];
   // Setup login protection space
-  NSURLCredential *credential;
-  NSDictionary *credentials;
-  NSURL *url = [NSURL URLWithString:@"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com"];
-  self.loginProtectionSpace = [[NSURLProtectionSpace alloc] initWithHost:url.host
-                                                                    port:[url.port integerValue]
-                                                                protocol:url.scheme
-                                                                   realm:nil
-                                                    authenticationMethod:NSURLAuthenticationMethodHTTPDigest];
-  
-  credentials = [[NSURLCredentialStorage sharedCredentialStorage] credentialsForProtectionSpace:self.loginProtectionSpace];
-  credential = [credentials.objectEnumerator nextObject];
-  
-  if(credential) {
-    NSLog(@"Debug: User %@ already connected with password %@", credential.user, credential.password);
-    // Log them in
-    
-    [self.apiManager loginEmail:credential.user password:credential.password success:^(NSDictionary *currentUser) {
-      [self loggedIn:currentUser];
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-      [self logIn:nil];
-    }];
-  } else {
-    NSLog(@"Debug: Not logged in, show login");
-    [self logIn:nil];
-  }
+//  NSURLCredential *credential;
+//  NSDictionary *credentials;
+//  NSURL *url = [NSURL URLWithString:BASE_API_URL_STRING];
+//  self.loginProtectionSpace = [[NSURLProtectionSpace alloc] initWithHost:url.host
+//                                                                    port:[url.port integerValue]
+//                                                                protocol:url.scheme
+//                                                                   realm:nil
+//                                                    authenticationMethod:NSURLAuthenticationMethodHTTPDigest];
+//  
+//  credentials = [[NSURLCredentialStorage sharedCredentialStorage] credentialsForProtectionSpace:self.loginProtectionSpace];
+//  credential = [credentials.objectEnumerator nextObject];
+//  
+//  if(credential) {
+//    NSLog(@"Debug: User credentials stored %@ already connected with password ********", credential.user);
+//    // Log them in
+//    
+//    [self.apiManager loginEmail:credential.user password:credential.password success:^(NSDictionary *currentUser) {
+//      [self loggedIn:currentUser];
+//    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+//      [self logIn:nil];
+//    }];
+//  } else {
+//    NSLog(@"Debug: Not logged in, show login");
+//    [self logIn:nil];
+//  }
 }
 
 - (void)loginEmail:(NSString *)email password:(NSString *)password {
@@ -183,12 +186,7 @@ id refToSelf; // reference to self for C function
 - (void)quit:(id)sender
 {
   // log out
-  [self.apiManager logout];
-  
-  // Destroy credentails
-  NSDictionary *credentials = [[NSURLCredentialStorage sharedCredentialStorage] credentialsForProtectionSpace:self.loginProtectionSpace];
-  NSURLCredential *credential = [credentials.objectEnumerator nextObject];
-  [[NSURLCredentialStorage sharedCredentialStorage] removeCredential:credential forProtectionSpace:self.loginProtectionSpace];
+//  [self.apiManager logout];
   
   // Quit app
   [[NSApplication sharedApplication] terminate:nil];
@@ -281,7 +279,7 @@ id refToSelf; // reference to self for C function
         [self.apiManager addDirectoryPath:[url path] toProject:project success:^(NSDictionary *project) {
           if(isNew) {
             // Open the website
-            NSString *urlString = [NSString stringWithFormat:@"http://cmcnamara87.github.io/progress/#/users/%@/diary/%@", [project objectForKey:@"userId"],  [project objectForKey:@"id"]];
+            NSString *urlString = [NSString stringWithFormat:@"%@#/users/%@/projects/%@", kBaseUrl, [project objectForKey:@"userId"],  [project objectForKey:@"id"]];
             NSURL *URL = [NSURL URLWithString:urlString];
             [[NSWorkspace sharedWorkspace] openURL:URL];
           }
@@ -340,12 +338,12 @@ id refToSelf; // reference to self for C function
 
 - (void)openWebApp:(id)sender
 {
-  NSString *urlString = @"http://cmcnamara87.github.io/progress";
-  if(self.user) {
-    // Overwrite with user url if they are logged in
-    urlString = @"http://cmcnamara87.github.io/progress/#/me/feed";
-  }
-  NSURL *URL = [NSURL URLWithString:urlString];
+//  NSString *urlString = @"http://getprogress.com";
+//  if(self.user) {
+//    // Overwrite with user url if they are logged in
+//    urlString = @"http://getprogress.com";
+//  }
+  NSURL *URL = [NSURL URLWithString:kBaseUrl];
   [[NSWorkspace sharedWorkspace] openURL:URL];
 }
 

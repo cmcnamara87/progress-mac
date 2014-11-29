@@ -19,6 +19,9 @@
            success:(void (^)(NSDictionary *currentUser))success
            failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
 
+- (void)getCurrentUserSuccess:(void (^)(NSDictionary *user))success
+                      failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
+
 - (void)getOnlineUsersSuccess:(void (^)(NSArray *onlineUsers))success
                       failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
 
@@ -38,4 +41,9 @@
 
 - (void)sendProgressForProject:(NSDictionary *)project;
 
+- (void)uploadScreenshot:(NSMetadataItem *)screenshot
+              forProject:(NSDictionary *)project
+                    text:(NSString *)text
+                 success:(void (^)(NSDictionary *post))success
+                 failure:(void (^)(NSError *error))failure;
 @end

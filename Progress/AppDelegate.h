@@ -9,8 +9,8 @@
 #import <Cocoa/Cocoa.h>
 #import "AFNetworking.h"
 
-static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/";
-static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
+//static NSString * const BASE_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/";
+//static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-southeast-2.compute.amazonaws.com/progress/api/index.php/";
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
@@ -25,4 +25,5 @@ static NSString * const BASE_API_URL_STRING = @"http://ec2-54-206-66-123.ap-sout
 
 - (void)openWebApp:(id)sender;
 - (void)loggedIn:(NSDictionary *)user;
+- (void)logIn:(id)sender;
 @end

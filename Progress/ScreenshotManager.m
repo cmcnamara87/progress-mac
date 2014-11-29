@@ -7,6 +7,7 @@
 //
 
 #import "ScreenshotManager.h"
+#import "ApiManager.h"
 #import "AppDelegate.h"
 
 @interface ScreenshotManager ()
@@ -162,99 +163,16 @@
   [self.metadataSearch enableUpdates];
   
   if (button == NSAlertDefaultReturn) {
-    [self uploadScreenshot:screenshot forProject:self.activeProject text:[input stringValue]];
+    [[ApiManager sharedManager] uploadScreenshot:screenshot forProject:self.activeProject text:[input stringValue] success:^(NSDictionary *post) {
+      // FIXME: move this into the screenshot manager
+      [[NotificationManager sharedManager] showScreenshotUploaded];
+      // Do something with the result.
+      self.newestScreenshotCreationDate = creationDate;
+      NSLog(@"Success, Creation date updated: %@", post);
+    } failure:^(NSError *error) {
+      
+    }];
   }
-}
-
-- (void)uploadScreenshot:(NSMetadataItem *)screenshot forProject:(NSDictionary *)project text:(NSString *)text
-{
-  NSString *fileName = [screenshot valueForAttribute:(NSString *)kMDItemFSName];
-  NSString *path = [screenshot valueForAttribute:(NSString *)kMDItemPath];
-  NSDate *creationDate = [screenshot valueForAttribute:(NSString *)kMDItemContentCreationDate];
-  
-  [[NotificationManager sharedManager] showUploadingScreenshot];
-  
-  //  NSString* apiUrl = @"http://example.com/upload";
-  
-  // Prepare a temporary file to store the multipart request prior to sending it to the server due to an alleged
-  // bug in NSURLSessionTask.
-  NSString* tmpFilename = [NSString stringWithFormat:@"%f", [NSDate timeIntervalSinceReferenceDate]];
-  NSURL* tmpFileUrl = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:tmpFilename]];
-  
-  
-  NSString *url = [NSString stringWithFormat:@"%@me/projects/%@/screenshots", BASE_API_URL_STRING, [project objectForKey:@"id"]];
-  NSLog(@"Sending screenshot to %@", url);
-  NSMutableURLRequest *multipartRequest = [[AFHTTPRequestSerializer serializer] multipartFormRequestWithMethod:@"POST"
-                                                                                                     URLString:url
-                                                                                                    parameters:@{@"text": text}
-                                                                                     constructingBodyWithBlock:^(id<AFMultipartFormData> formData)
-                                           {
-                                             [formData appendPartWithFileURL:[NSURL fileURLWithPath:path] name:@"file" fileName:fileName mimeType:@"image/jpeg" error:nil];
-                                           } error:nil];
-  
-  
-  // Dump multipart request into the temporary file.
-  [[AFHTTPRequestSerializer serializer] requestWithMultipartFormRequest:multipartRequest
-                                            writingStreamContentsToFile:tmpFileUrl
-                                                      completionHandler:^(NSError *error) {
-                                                        // Once the multipart form is serialized into a temporary file, we can initialize
-                                                        // the actual HTTP request using session manager.
-                                                        
-                                                        // Create default session manager.
-                                                        AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
-                                                        
-                                                        // Show progress.
-                                                        NSProgress *progress = nil;
-                                                        // Here note that we are submitting the initial multipart request. We are, however,
-                                                        // forcing the body stream to be read from the temporary file.
-                                                        NSURLSessionUploadTask *uploadTask = [manager uploadTaskWithRequest:multipartRequest
-                                                                                                                   fromFile:tmpFileUrl
-                                                                                                                   progress:&progress
-                                                                                                          completionHandler:^(NSURLResponse *response, id responseObject, NSError *error)
-                                                                                              {
-                                                                                                // Cleanup: remove temporary file.
-                                                                                                [[NSFileManager defaultManager] removeItemAtURL:tmpFileUrl error:nil];
-                                                                                                
-                                                                                                [[NotificationManager sharedManager] showScreenshotUploaded];
-                                                                                                // Do something with the result.
-                                                                                                if (error) {
-                                                                                                  NSLog(@"Error: %@", error);
-                                                                                                } else {
-                                                                                                  self.newestScreenshotCreationDate = creationDate;
-                                                                                                  NSLog(@"Success, Creation date updated: %@", responseObject);
-                                                                                                }
-                                                                                              }];
-                                                        
-                                                        // Add the observer monitoring the upload progress.
-                                                        //                                                        [progress addObserver:self
-                                                        //                                                                   forKeyPath:@"fractionCompleted"
-                                                        //                                                                      options:NSKeyValueObservingOptionNew
-                                                        //                                                                      context:NULL];
-                                                        
-                                                        
-                                                        // Start the file upload.
-                                                        [uploadTask resume];
-                                                      }];
-  
-  //  @"me/projects/%@/progress", [project objectForKey:@"id"]];
-  
-  
-  //  requestWithMultipartFormRequest:writingStreamContentsToFile:completionHandler:
-  
-  // Hopefully this fixes it
-  //  [request setValue:0 forHTTPHeaderField:@"Content-Length"];
-  
-  //  AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
-  //  NSProgress *progress = nil;
-  //
-  //  NSURLSessionUploadTask *uploadTask = [manager uploadTaskWithStreamedRequest:request progress:&progress completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
-  //    if (error) {
-  //      NSLog(@"Error: %@", error);
-  //    } else {
-  //      [self openWebApp:nil];
-  //    }
-  //  }];
-  //  [uploadTask resume];
 }
 
 

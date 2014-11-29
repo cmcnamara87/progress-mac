@@ -52,6 +52,7 @@
 		4E2C3E8419695A5200273C25 /* icon-18x18.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-18x18.png"; sourceTree = "<group>"; };
 		4E8C38CF19A9A3DA00301B63 /* ScreenshotManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScreenshotManager.h; sourceTree = "<group>"; };
 		4E8C38D019A9A3DA00301B63 /* ScreenshotManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScreenshotManager.m; sourceTree = "<group>"; };
+		4E90005F1A297E31004A8DC2 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		4EA7273F19D917090001985E /* ProgressManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProgressManager.h; sourceTree = "<group>"; };
 		4EA7274019D917090001985E /* ProgressManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ProgressManager.m; sourceTree = "<group>"; };
 		4EA7274219D919250001985E /* ApiManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApiManager.h; sourceTree = "<group>"; };
@@ -148,6 +149,7 @@
 		4EBA1CDF1955A86B00AF60E1 /* Progress */ = {
 			isa = PBXGroup;
 			children = (
+				4E90005F1A297E31004A8DC2 /* Constants.h */,
 				4EBA1CEB1955A86B00AF60E1 /* AppDelegate.h */,
 				4EBA1CEC1955A86B00AF60E1 /* AppDelegate.m */,
 				4E8C38CF19A9A3DA00301B63 /* ScreenshotManager.h */,
